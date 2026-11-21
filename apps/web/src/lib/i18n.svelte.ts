@@ -1,8 +1,9 @@
+import { playEn, playVi } from './content/strings-play.ts';
 import { load, save } from './storage.ts';
 
 export type Lang = 'vi' | 'en';
 
-const vi = {
+const baseVi = {
   appName: 'Ma Sói',
   tagline: 'Chơi Ma Sói cùng nhau, mỗi người một điện thoại.',
   yourName: 'Tên của bạn',
@@ -94,10 +95,11 @@ const vi = {
   doThis: 'Làm',
 };
 
+const vi = { ...baseVi, ...playVi };
 type Dict = typeof vi;
 export type MessageKey = keyof Dict;
 
-const en: Dict = {
+const baseEn: Omit<Dict, keyof typeof playVi> = {
   appName: 'Werewolf',
   tagline: 'Play Werewolf together, one phone each.',
   yourName: 'Your name',
@@ -189,6 +191,7 @@ const en: Dict = {
   doThis: 'Do',
 };
 
+const en: Dict = { ...baseEn, ...playEn };
 const dictionaries: Record<Lang, Dict> = { vi, en };
 const LANG_KEY = 'bwf.lang';
 

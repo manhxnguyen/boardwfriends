@@ -88,6 +88,7 @@ describe('join', () => {
     expect(JSON.stringify(view)).not.toContain('token');
     expect(view).toEqual({
       code: 'ABCD',
+      displays: 0,
       hostId: 'p1',
       players: [
         { id: 'p1', name: 'An', connected: true, isHost: true },

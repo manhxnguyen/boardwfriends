@@ -1,7 +1,12 @@
 import * as v from 'valibot';
+import { CLASSIC_ROLE_IDS, ONE_NIGHT_ROLE_IDS } from './roles.ts';
+import type { ErrorCode, RoomView } from './views.ts';
+
+export * from './roles.ts';
+export * from './views.ts';
 
 /** Bump whenever a message shape changes incompatibly. Clients on another version are rejected. */
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 
 /** Room codes avoid look-alike characters (I/O/0/1) so they are easy to read aloud and type. */
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -10,8 +15,10 @@ export const ROOM_CODE_PATTERN = new RegExp(`^[${ROOM_CODE_ALPHABET}]{${ROOM_COD
 
 export const MAX_PLAYERS = 20;
 export const NAME_MAX_LENGTH = 20;
+export const DAY_MINUTES_MIN = 1;
+export const DAY_MINUTES_MAX = 15;
 
-/** Literal text frames used for keep-alive. Answered by the runtime without waking the room. */
+/** Literal text frames used for keep-alive. Answered without waking the room. */
 export const PING = 'ping';
 export const PONG = 'pong';
 
@@ -22,34 +29,6 @@ export function normalizeRoomCode(input: string): string {
 export function isRoomCode(input: string): boolean {
   return ROOM_CODE_PATTERN.test(input);
 }
-
-/**
- * Roles of the Classic mode (Ultimate Werewolf, 2021 role set). Rules and point values live in
- * @bwf/engine; see docs/rules/classic.md. Chupacabra is left out until its card text is known.
- */
-export const CLASSIC_ROLE_IDS = [
-  'villager',
-  'werewolf',
-  'seer',
-  'bodyguard',
-  'hunter',
-  'witch',
-  'wolf-cub',
-  'sorceress',
-  'tanner',
-  'village-idiot',
-  'spellcaster',
-  'insomniac',
-  'mason',
-] as const;
-export type ClassicRoleId = (typeof CLASSIC_ROLE_IDS)[number];
-
-export function isClassicRoleId(value: string): value is ClassicRoleId {
-  return (CLASSIC_ROLE_IDS as readonly string[]).includes(value);
-}
-
-/** Role id → number of cards. Missing ids mean 0. */
-export type RoleCounts = Partial<Record<ClassicRoleId, number>>;
 
 // ---------------------------------------------------------------------------
 // Client → server
@@ -73,41 +52,103 @@ export const HelloMessage = v.object({
   v: v.number(),
   token: PlayerToken,
   name: PlayerName,
+  /** 'display' = narrator screen (MacBook): no seat, public view only. */
+  as: v.optional(v.picklist(['player', 'display']), 'player'),
 });
 
 export const RenameMessage = v.object({ t: v.literal('rename'), name: PlayerName });
 export const LeaveMessage = v.object({ t: v.literal('leave') });
 export const KickMessage = v.object({ t: v.literal('kick'), playerId: PlayerId });
 
-/** Host edits the deck. Sent on every change; the deck may be incomplete while editing. */
+/** Host: new seating order (all current player ids). */
+export const SeatsMessage = v.object({
+  t: v.literal('seats'),
+  order: v.pipe(v.array(PlayerId), v.maxLength(MAX_PLAYERS)),
+});
+
+/** Host edits the game settings. Sent on every change; the deck may be incomplete while editing. */
 export const SetupMessage = v.object({
   t: v.literal('setup'),
-  roles: v.pipe(
-    v.record(v.picklist(CLASSIC_ROLE_IDS), CardCount),
-    v.check((roles) => Object.keys(roles).length <= CLASSIC_ROLE_IDS.length),
-  ),
+  game: v.picklist(['classic', 'one-night']),
+  mode: v.picklist(['manual', 'auto']),
+  roles: v.record(v.picklist(CLASSIC_ROLE_IDS), CardCount),
+  oneNightRoles: v.record(v.picklist(ONE_NIGHT_ROLE_IDS), CardCount),
   moderatorId: v.nullable(PlayerId),
   publicRoles: v.boolean(),
+  reveal: v.picklist(['role', 'team', 'none']),
+  dayMinutes: v.pipe(
+    v.number(),
+    v.integer(),
+    v.minValue(DAY_MINUTES_MIN),
+    v.maxValue(DAY_MINUTES_MAX),
+  ),
+  voice: v.boolean(),
 });
 
 /** Host deals the cards. */
 export const DealMessage = v.object({ t: v.literal('deal') });
 /** Player confirms they looked at their card. */
 export const SeenMessage = v.object({ t: v.literal('seen') });
-/** Host collects the cards and goes back to setup for a new round. */
+/** Host collects the cards and goes back to setup. */
 export const ResetMessage = v.object({ t: v.literal('reset') });
+/** Host starts the first night once everyone has seen their card. */
+export const StartMessage = v.object({ t: v.literal('start') });
+/** Host pauses or resumes every timer. */
+export const PauseMessage = v.object({ t: v.literal('pause'), paused: v.boolean() });
+/** Host skips the rest of the current discussion (day timer). */
+export const SkipMessage = v.object({ t: v.literal('skip') });
+
+/** Night/hunter action. Which fields matter depends on the player's current prompt. */
+export const ActMessage = v.object({
+  t: v.literal('act'),
+  players: v.pipe(v.array(PlayerId), v.maxLength(2)),
+  center: v.optional(
+    v.pipe(v.array(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(2))), v.maxLength(2)),
+    [],
+  ),
+  witch: v.optional(v.picklist(['save', 'kill', 'pass'])),
+});
+
+/** Classic day: nominate, second, vote. */
+export const NominateMessage = v.object({ t: v.literal('nominate'), target: PlayerId });
+export const SecondMessage = v.object({ t: v.literal('second') });
+export const VoteMessage = v.object({
+  t: v.literal('vote'),
+  choice: v.picklist(['keep', 'eliminate']),
+});
+/** One Night: point at a player in the final vote. */
+export const AccuseMessage = v.object({ t: v.literal('accuse'), target: PlayerId });
+
+/** Narrator display: a command recognised from speech (only when setup.voice is on). */
+export const VoiceMessage = v.object({
+  t: v.literal('voice'),
+  cmd: v.picklist(['nominate', 'second', 'start-vote', 'pause', 'resume', 'end-day']),
+  target: v.optional(PlayerId),
+});
 
 export const ClientMessage = v.variant('t', [
   HelloMessage,
   RenameMessage,
   LeaveMessage,
   KickMessage,
+  SeatsMessage,
   SetupMessage,
   DealMessage,
   SeenMessage,
   ResetMessage,
+  StartMessage,
+  PauseMessage,
+  SkipMessage,
+  ActMessage,
+  NominateMessage,
+  SecondMessage,
+  VoteMessage,
+  AccuseMessage,
+  VoiceMessage,
 ]);
 export type ClientMessage = v.InferOutput<typeof ClientMessage>;
+/** Input shape (before defaults are applied), useful for clients building messages. */
+export type ClientMessageInput = v.InferInput<typeof ClientMessage>;
 
 export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
@@ -131,79 +172,13 @@ export function parseClientMessage(raw: unknown): ParseResult<ClientMessage> {
 // ---------------------------------------------------------------------------
 // Server → client
 
-export interface PlayerView {
-  id: string;
-  name: string;
-  connected: boolean;
-  isHost: boolean;
-}
-
-export interface LobbyView {
-  code: string;
-  hostId: string | null;
-  players: PlayerView[];
-}
-
-export interface SetupView {
-  roles: RoleCounts;
-  /** Player who runs the game and gets no card; null = no moderator in the app. */
-  moderatorId: string | null;
-  /** Whether everyone may see which roles are in the deck. */
-  publicRoles: boolean;
-}
-
-export interface Assignment {
-  playerId: string;
-  role: ClassicRoleId;
-  seen: boolean;
-}
-
-export type GameView =
-  | {
-      phase: 'setup';
-      /** Null when the deck is hidden from this player (publicRoles off, not host). */
-      setup: SetupView | null;
-    }
-  | {
-      phase: 'dealt';
-      round: number;
-      setup: SetupView | null;
-      moderatorId: string | null;
-      /** This player's own card; null for the moderator or someone who joined late. */
-      yourRole: ClassicRoleId | null;
-      youSeen: boolean;
-      seenCount: number;
-      dealtCount: number;
-      /** Full table, only for the moderator. */
-      assignments: Assignment[] | null;
-    };
-
-export interface RoomView {
-  lobby: LobbyView;
-  game: GameView;
-}
-
-export type ErrorCode =
-  | 'version_mismatch'
-  | 'invalid_message'
-  | 'not_joined'
-  | 'room_full'
-  | 'room_not_found'
-  | 'not_host'
-  | 'unknown_player'
-  | 'cannot_kick_self'
-  | 'game_in_progress'
-  | 'wrong_phase'
-  | 'invalid_setup'
-  | 'no_card';
-
 export type ServerMessage =
-  | { t: 'welcome'; v: number; you: string; room: RoomView }
+  | { t: 'welcome'; v: number; you: string | null; room: RoomView }
   | { t: 'state'; room: RoomView }
   | { t: 'kicked' }
   | { t: 'error'; code: ErrorCode; detail?: string };
 
-export function encode(message: ServerMessage | ClientMessage): string {
+export function encode(message: ServerMessage | ClientMessageInput): string {
   return JSON.stringify(message);
 }
 

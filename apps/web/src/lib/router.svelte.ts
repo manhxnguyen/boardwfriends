@@ -1,17 +1,21 @@
 import { isRoomCode, normalizeRoomCode } from '@bwf/protocol';
 
-export type Route = { name: 'home' } | { name: 'room'; code: string };
+export type Route =
+  | { name: 'home' }
+  | { name: 'room'; code: string }
+  /** Narrator screen for the MacBook: /r/ABCD/tv */
+  | { name: 'display'; code: string };
 
 function parse(pathname: string): Route {
-  const match = /^\/r\/([^/]+)\/?$/.exec(pathname);
+  const match = /^\/r\/([^/]+)(\/tv)?\/?$/.exec(pathname);
   if (match?.[1]) {
     const code = normalizeRoomCode(decodeURIComponent(match[1]));
-    if (isRoomCode(code)) return { name: 'room', code };
+    if (isRoomCode(code)) return match[2] ? { name: 'display', code } : { name: 'room', code };
   }
   return { name: 'home' };
 }
 
-/** Minimal history-based router: `/` and `/r/:code`. */
+/** Minimal history-based router: `/`, `/r/:code` and `/r/:code/tv`. */
 export const router = $state<{ route: Route }>({ route: parse(location.pathname) });
 
 addEventListener('popstate', () => {

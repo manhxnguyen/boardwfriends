@@ -1,14 +1,28 @@
-import { CLASSIC_ROLE_IDS, type ClassicRoleId, type RoleCounts } from '@bwf/protocol';
+import {
+  CLASSIC_ROLE_IDS,
+  type ClassicRoleId,
+  type RoleCounts,
+  type SetupView,
+} from '@bwf/protocol';
 import { roleDef } from './roles.ts';
 
-/** Deck configuration chosen by the host. */
-export interface Setup {
-  roles: RoleCounts;
-  moderatorId: string | null;
-  publicRoles: boolean;
-}
+/** Game settings chosen by the host. */
+export type Setup = SetupView;
 
-export const EMPTY_SETUP: Setup = { roles: {}, moderatorId: null, publicRoles: true };
+/** The part of the settings that decides who gets a Classic card. */
+export type DeckSetup = Pick<Setup, 'roles' | 'moderatorId'>;
+
+export const EMPTY_SETUP: Setup = {
+  game: 'classic',
+  mode: 'auto',
+  roles: {},
+  oneNightRoles: {},
+  moderatorId: null,
+  publicRoles: true,
+  reveal: 'role',
+  dayMinutes: 5,
+  voice: false,
+};
 
 export type SetupIssue =
   | { level: 'error'; code: 'count_mismatch'; cards: number; seats: number }
@@ -34,12 +48,12 @@ export function totalPoints(roles: RoleCounts): number {
 }
 
 /** Number of players who receive a card. */
-export function seatCount(setup: Setup, playerIds: readonly string[]): number {
+export function seatCount(setup: DeckSetup, playerIds: readonly string[]): number {
   return playerIds.filter((id) => id !== setup.moderatorId).length;
 }
 
 /** Errors block dealing; warnings are informational. */
-export function validateSetup(setup: Setup, playerIds: readonly string[]): SetupIssue[] {
+export function validateSetup(setup: DeckSetup, playerIds: readonly string[]): SetupIssue[] {
   const issues: SetupIssue[] = [];
   const seats = seatCount(setup, playerIds);
   const cards = cardCount(setup.roles);

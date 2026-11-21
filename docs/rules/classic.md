@@ -147,6 +147,24 @@
 
 ---
 
+## 9b. Chế độ app tự dẫn (M2): các quyết định của app [AD]
+
+Luật gốc dựa vào quản trò người thật. Khi app làm quản trò, những chỗ sau được quy định như dưới đây. Mọi quyết định đều có test trong `packages/engine/test/classic-game.test.ts`.
+
+| Mã         | Quyết định                                                                                                                                                                                                                                                                                                                    |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AD-AUTO-01 | Ban đêm mọi người **cúi xuống điện thoại của mình** thay cho nhắm mắt. Mỗi lượt gọi có **thời lượng cố định** (Sói 30 giây theo [RR tr.3], Phù thuỷ 20 giây, các vai khác 15 giây), kể cả khi vai đã chết hoặc đã bấm xong, để không ai đoán được vai qua thời gian.                                                          |
+| AD-AUTO-02 | Trong mỗi lượt đêm, **người không có việc gì làm** sẽ được hỏi "Bạn nghi ai là Sói?". Ai cũng bấm, nên không đoán được vai qua việc ai đang cầm máy. Câu trả lời được dùng cho thống kê cuối ván. Sói ở đêm đầu cũng nhận câu hỏi này, kèm danh sách bầy.                                                                     |
+| AD-AUTO-03 | Sói chọn trên điện thoại và thấy lựa chọn của đồng đội theo thời gian thực. Nạn nhân là người được **tất cả Sói còn sống chọn trùng nhau** khi hết giờ; nếu không trùng thì không ai chết (UW-NIGHT-01/02).                                                                                                                   |
+| AD-AUTO-04 | Bảo vệ chặn được cả lượt giết của Phù thuỷ ("không thể bị loại trong đêm đó", UW-R-BG-01). Phù thuỷ chọn "không làm gì" thì không mất lượt dùng.                                                                                                                                                                              |
+| AD-AUTO-05 | Thợ săn có 30 giây để bắn. Hết giờ thì coi như bắn lên trời.                                                                                                                                                                                                                                                                  |
+| AD-AUTO-06 | Đề cử: cần người khác **ủng hộ trong 15 giây**; bào chữa 30 giây (chủ phòng có thể bỏ qua để bỏ phiếu ngay); bỏ phiếu 20 giây, kết thúc sớm nếu mọi người đã bỏ phiếu. Phiếu được tính trên **số người còn sống** (UW-VOTE-04). Đồng hồ thảo luận **tạm dừng** trong lúc đề cử; nếu đề cử thất bại thì còn tối thiểu 20 giây. |
+| AD-AUTO-07 | Người bị Thầy phép yểm bùa **không được đề cử và không được ủng hộ** (vì đó là "nói"), nhưng vẫn được bỏ phiếu.                                                                                                                                                                                                               |
+| AD-AUTO-08 | Đề cử và ủng hộ **bằng giọng nói** (qua MacBook) được ghi là "có người". Lý do: nhận dạng giọng nói không biết ai đang nói.                                                                                                                                                                                                   |
+| AD-AUTO-09 | Kiểm tra điều kiện thắng sau mỗi lần có người bị loại, **sau khi Thợ săn đã bắn**. Thợ thuộc da bị loại thì ván kết thúc ngay (RR-TANNER).                                                                                                                                                                                    |
+| AD-AUTO-10 | Thứ tự chỗ ngồi do chủ phòng xếp trước khi chia bài; Kẻ mất ngủ dùng thứ tự này để xác định 2 người ngồi cạnh (bỏ qua người đã chết, [RR tr.3]).                                                                                                                                                                              |
+| AD-AUTO-11 | Người chơi rời phòng giữa ván **vẫn giữ chỗ** trong ván (không tự động bị loại). Chủ phòng có thể bắt đầu ván mới.                                                                                                                                                                                                            |
+
 ## 10. Việc còn mở
 
 - 🔍 Chữ đầy đủ trên lá bài của **Chupacabra, Thợ thuộc da, Phù thuỷ, Kẻ mất ngủ, Thầy phép** (bị che trong PDF tr.1). Cần ảnh chụp lá bài thật, hoặc PDF bản đầy đủ.

@@ -15,7 +15,9 @@
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "lan": "pnpm build && pnpm --filter @bwf/lan-server build && node apps/lan-server/dist/server.mjs",
+    "lan:start": "node apps/lan-server/dist/server.mjs"
   },
   "devDependencies": {
     "prettier": "^3.10.1",

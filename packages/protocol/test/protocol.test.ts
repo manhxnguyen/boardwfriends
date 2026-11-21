@@ -16,7 +16,7 @@ describe('parseClientMessage', () => {
     );
     expect(r).toEqual({
       ok: true,
-      value: { t: 'hello', v: PROTOCOL_VERSION, token: TOKEN, name: 'Linh' },
+      value: { t: 'hello', v: PROTOCOL_VERSION, token: TOKEN, name: 'Linh', as: 'player' },
     });
   });
 
@@ -55,7 +55,20 @@ describe('parseClientMessage', () => {
 
 describe('game messages', () => {
   const setup = (roles: unknown) =>
-    parseClientMessage(JSON.stringify({ t: 'setup', roles, moderatorId: null, publicRoles: true }));
+    parseClientMessage(
+      JSON.stringify({
+        t: 'setup',
+        game: 'classic',
+        mode: 'auto',
+        roles,
+        oneNightRoles: {},
+        moderatorId: null,
+        publicRoles: true,
+        reveal: 'role',
+        dayMinutes: 5,
+        voice: false,
+      }),
+    );
 
   it('accepts a deck', () => {
     expect(setup({ werewolf: 2, seer: 1, villager: 5 }).ok).toBe(true);

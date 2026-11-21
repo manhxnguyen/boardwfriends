@@ -33,10 +33,13 @@
   } = $props();
 
   const playerIds = $derived(lobby.players.map((p) => p.id));
-  const seats = $derived(seatCount(setup, playerIds));
+  const manual = $derived(setup.mode === 'manual');
+  // With the app as moderator, everyone gets a card.
+  const deck = $derived({ roles: setup.roles, moderatorId: manual ? setup.moderatorId : null });
+  const seats = $derived(seatCount(deck, playerIds));
   const cards = $derived(cardCount(setup.roles));
   const points = $derived(totalPoints(setup.roles));
-  const issues = $derived(validateSetup(setup, playerIds));
+  const issues = $derived(validateSetup(deck, playerIds));
   const dealable = $derived(canDeal(issues));
   const presets = $derived(presetsFor(seats));
 
@@ -97,21 +100,23 @@
 <section class="mt-6 flex flex-col gap-4">
   <h2 class="text-lg font-bold">{t('deck')}</h2>
 
-  <!-- Moderator -->
-  <label class="block rounded-xl bg-night-900 p-4">
-    <span class="text-sm font-semibold text-slate-300">{t('moderator')}</span>
-    <select
-      class="mt-2 block w-full rounded-lg border border-night-600 bg-night-950 px-3 py-3"
-      value={setup.moderatorId ?? ''}
-      onchange={(e) => onChange({ ...setup, moderatorId: e.currentTarget.value || null })}
-    >
-      <option value="">{t('noModerator')}</option>
-      {#each lobby.players as p (p.id)}
-        <option value={p.id}>{p.name}</option>
-      {/each}
-    </select>
-    <span class="mt-2 block text-xs text-slate-400">{t('moderatorHint')}</span>
-  </label>
+  {#if manual}
+    <!-- Moderator -->
+    <label class="block rounded-xl bg-night-900 p-4">
+      <span class="text-sm font-semibold text-slate-300">{t('moderator')}</span>
+      <select
+        class="mt-2 block w-full rounded-lg border border-night-600 bg-night-950 px-3 py-3"
+        value={setup.moderatorId ?? ''}
+        onchange={(e) => onChange({ ...setup, moderatorId: e.currentTarget.value || null })}
+      >
+        <option value="">{t('noModerator')}</option>
+        {#each lobby.players as p (p.id)}
+          <option value={p.id}>{p.name}</option>
+        {/each}
+      </select>
+      <span class="mt-2 block text-xs text-slate-400">{t('moderatorHint')}</span>
+    </label>
+  {/if}
 
   <!-- Presets -->
   {#if presets.length}

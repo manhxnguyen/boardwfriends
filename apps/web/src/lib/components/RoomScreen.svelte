@@ -1,19 +1,25 @@
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte';
   import type { SetupView } from '@bwf/protocol';
-  import { joinUrl } from '../api.ts';
+  import { joinUrl, narratorUrl } from '../api.ts';
   import { RoomConnection, type EndReason } from '../connection.svelte.ts';
   import { t, type MessageKey } from '../i18n.svelte.ts';
   import { rememberName, savedName } from '../identity.ts';
   import { goHome } from '../router.svelte.ts';
   import { WakeLock } from '../wakeLock.svelte.ts';
+  import ClassicPlay from './ClassicPlay.svelte';
   import DeckBuilder from './DeckBuilder.svelte';
   import DeckSummary from './DeckSummary.svelte';
+  import GameSettings from './GameSettings.svelte';
   import HoldToReveal from './HoldToReveal.svelte';
   import LangToggle from './LangToggle.svelte';
   import ModeratorView from './ModeratorView.svelte';
+  import NarratorLink from './NarratorLink.svelte';
+  import OneNightDeck from './OneNightDeck.svelte';
+  import OneNightPlay from './OneNightPlay.svelte';
   import PlayerList from './PlayerList.svelte';
   import QrCard from './QrCard.svelte';
+  import RoleCard from './RoleCard.svelte';
 
   let { code }: { code: string } = $props();
 
@@ -49,16 +55,23 @@
     conn.lastError = null;
   });
 
-  // M1 needs a human moderator: on a brand-new room, default the host to that job once.
+  // A human moderator is needed in manual mode: default the host to that job once.
   let defaultedModerator = false;
   $effect(() => {
     if (defaultedModerator || !conn.isHost || !conn.you || game?.phase !== 'setup') return;
     const setup = game.setup;
-    if (!setup) return;
+    if (!setup || setup.mode !== 'manual' || setup.game !== 'classic') return;
     defaultedModerator = true;
-    if (setup.moderatorId === null && Object.keys(setup.roles).length === 0) {
-      conn.setup({ ...setup, moderatorId: conn.you });
-    }
+    if (setup.moderatorId === null) conn.setup({ ...setup, moderatorId: conn.you });
+  });
+
+  // Moving between setup, dealt and playing replaces the whole screen: start at the top
+  // (the host is usually scrolled down to the Deal button).
+  const screenKey = $derived(
+    game ? `${game.phase}:${game.phase === 'setup' ? '' : game.round}` : '',
+  );
+  $effect(() => {
+    if (screenKey) window.scrollTo({ top: 0 });
   });
 
   async function share() {
@@ -101,7 +114,7 @@
 
 <header class="flex items-center justify-between">
   <button type="button" class="text-sm text-slate-400" onclick={goHome}>← {t('backHome')}</button>
-  {#if game?.phase === 'dealt'}
+  {#if game && game.phase !== 'setup'}
     <span class="font-mono text-sm tracking-widest text-moon">
       {code} · {t('round', { n: String(game.round) })}
     </span>
@@ -145,7 +158,7 @@
 
   {#if room && conn.you && game}
     {#if game.phase === 'setup'}
-      <!-- ───────────── Setup: lobby + deck ───────────── -->
+      <!-- ───────────── Setup: lobby, settings, deck ───────────── -->
       <section class="mt-6 text-center">
         <p class="text-sm tracking-widest text-slate-400 uppercase">{t('room')}</p>
         <p class="font-mono text-6xl font-bold tracking-[0.25em] text-moon">{code}</p>
@@ -157,28 +170,50 @@
         lobby={room.lobby}
         you={conn.you}
         isHost={conn.isHost}
-        moderatorId={game.setup?.moderatorId ?? null}
+        moderatorId={game.setup?.mode === 'manual' ? (game.setup.moderatorId ?? null) : null}
         onRename={rename}
         onKick={(id) => conn.kick(id)}
+        onReorder={conn.isHost ? (order) => conn.send({ t: 'seats', order }) : undefined}
       />
 
       {#if conn.isHost && game.setup}
-        <DeckBuilder
-          lobby={room.lobby}
-          setup={game.setup}
-          onChange={updateSetup}
-          onDeal={() => conn.deal()}
-        />
+        {@const setup = game.setup}
+        <GameSettings {setup} onChange={updateSetup} />
+        {#if setup.game === 'one-night' || setup.mode === 'auto'}
+          <NarratorLink url={narratorUrl(code)} displays={room.lobby.displays} />
+        {/if}
+        {#if setup.game === 'classic'}
+          <DeckBuilder
+            lobby={room.lobby}
+            {setup}
+            onChange={updateSetup}
+            onDeal={() => conn.deal()}
+          />
+        {:else}
+          <OneNightDeck
+            lobby={room.lobby}
+            {setup}
+            onChange={updateSetup}
+            onDeal={() => conn.deal()}
+          />
+        {/if}
       {:else}
         <p class="mt-6 text-center text-slate-300">{t('deckChoosing')}</p>
-        {#if game.setup && Object.keys(game.setup.roles).length}
+        {#if game.setup && game.setup.game === 'classic' && Object.keys(game.setup.roles).length}
           <div class="mt-4"><DeckSummary roles={game.setup.roles} /></div>
         {:else if !game.setup}
           <p class="mt-2 text-center text-sm text-slate-400">{t('deckHidden')}</p>
         {/if}
       {/if}
+    {:else if game.phase === 'playing'}
+      <!-- ───────────── App-moderated game ───────────── -->
+      {#if game.play.kind === 'classic'}
+        <ClassicPlay {conn} view={game.play} lobby={room.lobby} isHost={conn.isHost} />
+      {:else}
+        <OneNightPlay {conn} view={game.play} lobby={room.lobby} isHost={conn.isHost} />
+      {/if}
     {:else if isModerator && game.assignments}
-      <!-- ───────────── Dealt: moderator ───────────── -->
+      <!-- ───────────── Manual: moderator ───────────── -->
       <section class="mt-6">
         <h1 class="text-2xl font-bold">🎙️ {t('youAreModerator')}</h1>
         <p class="mt-1 text-sm text-slate-400">
@@ -193,11 +228,13 @@
         assignments={game.assignments}
       />
     {:else}
-      <!-- ───────────── Dealt: player ───────────── -->
+      <!-- ───────────── Manual: player ───────────── -->
       <section class="mt-6 flex flex-col items-center gap-4 text-center">
         {#if game.yourRole}
           <p class="text-sm font-semibold text-moon">🤫 {t('keepSecret')}</p>
-          <HoldToReveal role={game.yourRole} onFirstReveal={() => conn.markSeen()} />
+          <HoldToReveal onFirstReveal={() => conn.markSeen()}>
+            <RoleCard role={game.yourRole} />
+          </HoldToReveal>
           <p class="text-sm text-slate-300">{game.youSeen ? t('seenDone') : t('holdToReveal')}</p>
         {:else}
           <p class="mt-10 text-slate-300">{t('noCard')}</p>
@@ -212,7 +249,7 @@
       {/if}
     {/if}
 
-    {#if game.phase === 'dealt' && conn.isHost}
+    {#if game.phase !== 'setup' && conn.isHost}
       <button
         type="button"
         class="mt-6 w-full rounded-xl bg-night-700 px-4 py-3 font-semibold"

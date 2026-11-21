@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  EMPTY_SETUP,
   applyRoom,
   createRoomState,
   roomView,
@@ -11,6 +12,8 @@ import {
 } from '../src/index.ts';
 
 const T0 = 1_000_000;
+/** M1 tests run the manual (human moderator) mode. */
+const MANUAL = { ...EMPTY_SETUP, mode: 'manual' as const };
 const DECK_8: Setup['roles'] = { werewolf: 2, seer: 1, bodyguard: 1, villager: 4 };
 
 function makeCtx(seed = 1): RoomContext {
@@ -37,7 +40,11 @@ function dealtRoom(seed = 1): RoomState {
   return run(
     [
       ...join(...NAMES),
-      { type: 'setup', by: 'p1', setup: { roles: DECK_8, moderatorId: 'p1', publicRoles: true } },
+      {
+        type: 'setup',
+        by: 'p1',
+        setup: { ...MANUAL, roles: DECK_8, moderatorId: 'p1', publicRoles: true },
+      },
       { type: 'deal', by: 'p1' },
     ],
     makeCtx(seed),
@@ -53,7 +60,11 @@ describe('setup', () => {
     const state = run(join('An', 'Binh'));
     expectError(
       state,
-      { type: 'setup', by: 'p2', setup: { roles: {}, moderatorId: null, publicRoles: true } },
+      {
+        type: 'setup',
+        by: 'p2',
+        setup: { ...MANUAL, roles: {}, moderatorId: null, publicRoles: true },
+      },
       'not_host',
     );
   });
@@ -64,10 +75,16 @@ describe('setup', () => {
       {
         type: 'setup',
         by: 'p1',
-        setup: { roles: { werewolf: 1, seer: 0 }, moderatorId: 'p2', publicRoles: false },
+        setup: {
+          ...MANUAL,
+          roles: { werewolf: 1, seer: 0 },
+          moderatorId: 'p2',
+          publicRoles: false,
+        },
       },
     ]);
     expect(state.game.setup).toEqual({
+      ...MANUAL,
       roles: { werewolf: 1 },
       moderatorId: 'p2',
       publicRoles: false,
@@ -77,7 +94,11 @@ describe('setup', () => {
   it('rejects a moderator who is not in the room', () => {
     expectError(
       run(join('An')),
-      { type: 'setup', by: 'p1', setup: { roles: {}, moderatorId: 'nobody', publicRoles: true } },
+      {
+        type: 'setup',
+        by: 'p1',
+        setup: { ...MANUAL, roles: {}, moderatorId: 'nobody', publicRoles: true },
+      },
       'invalid_setup',
     );
   });
@@ -122,7 +143,7 @@ describe('deal', () => {
       {
         type: 'setup',
         by: 'p1',
-        setup: { roles: { werewolf: 1 }, moderatorId: null, publicRoles: true },
+        setup: { ...MANUAL, roles: { werewolf: 1 }, moderatorId: null, publicRoles: true },
       },
     ]);
     expectError(state, { type: 'deal', by: 'p1' }, 'invalid_setup');
@@ -131,7 +152,11 @@ describe('deal', () => {
   it('only the host deals, and only once per round', () => {
     const state = run([
       ...join(...NAMES),
-      { type: 'setup', by: 'p1', setup: { roles: DECK_8, moderatorId: 'p1', publicRoles: true } },
+      {
+        type: 'setup',
+        by: 'p1',
+        setup: { ...MANUAL, roles: DECK_8, moderatorId: 'p1', publicRoles: true },
+      },
     ]);
     expectError(state, { type: 'deal', by: 'p2' }, 'not_host');
     expectError(dealtRoom(), { type: 'deal', by: 'p1' }, 'wrong_phase');
@@ -140,7 +165,11 @@ describe('deal', () => {
   it('locks the deck while cards are out', () => {
     expectError(
       dealtRoom(),
-      { type: 'setup', by: 'p1', setup: { roles: {}, moderatorId: null, publicRoles: true } },
+      {
+        type: 'setup',
+        by: 'p1',
+        setup: { ...MANUAL, roles: {}, moderatorId: null, publicRoles: true },
+      },
       'wrong_phase',
     );
   });
@@ -163,7 +192,7 @@ describe('joining mid-round', () => {
 describe('views (secrecy)', () => {
   it('a player sees only their own card', () => {
     const state = dealtRoom();
-    const view = roomView(state, 'p2');
+    const view = roomView(state, 'p2', T0);
     if (view.game.phase !== 'dealt' || state.game.phase !== 'dealt') throw new Error();
     expect(view.game.yourRole).toBe(state.game.assignments.p2);
     expect(view.game.assignments).toBeNull();
@@ -175,7 +204,7 @@ describe('views (secrecy)', () => {
   });
 
   it('the moderator sees the whole table and has no card', () => {
-    const view = roomView(dealtRoom(), 'p1');
+    const view = roomView(dealtRoom(), 'p1', T0);
     if (view.game.phase !== 'dealt') throw new Error();
     expect(view.game.yourRole).toBeNull();
     expect(view.game.assignments).toHaveLength(8);
@@ -187,16 +216,16 @@ describe('views (secrecy)', () => {
       {
         type: 'setup',
         by: 'p1',
-        setup: { roles: { werewolf: 1 }, moderatorId: 'p2', publicRoles: false },
+        setup: { ...MANUAL, roles: { werewolf: 1 }, moderatorId: 'p2', publicRoles: false },
       },
     ]);
-    expect(roomView(state, 'p3').game.setup).toBeNull();
-    expect(roomView(state, 'p1').game.setup).not.toBeNull(); // host
-    expect(roomView(state, 'p2').game.setup).not.toBeNull(); // moderator
+    expect(roomView(state, 'p3', T0).game.setup).toBeNull();
+    expect(roomView(state, 'p1', T0).game.setup).not.toBeNull(); // host
+    expect(roomView(state, 'p2', T0).game.setup).not.toBeNull(); // moderator
   });
 
   it('shows the deck to everyone when publicRoles is on', () => {
-    const view = roomView(dealtRoom(), 'p5');
+    const view = roomView(dealtRoom(), 'p5', T0);
     expect(view.game.setup?.roles).toEqual(DECK_8);
   });
 });
@@ -212,7 +241,7 @@ describe('seen and reset', () => {
       makeCtx(),
       state,
     );
-    const view = roomView(state, 'p1');
+    const view = roomView(state, 'p1', T0);
     if (view.game.phase !== 'dealt') throw new Error();
     expect(view.game.seenCount).toBe(1);
     expect(view.game.assignments?.find((a) => a.playerId === 'p2')?.seen).toBe(true);
@@ -227,7 +256,7 @@ describe('seen and reset', () => {
     expect(state.game).toEqual({
       phase: 'setup',
       round: 1,
-      setup: { roles: DECK_8, moderatorId: 'p1', publicRoles: true },
+      setup: { ...MANUAL, roles: DECK_8, moderatorId: 'p1', publicRoles: true },
     });
     const again = run([{ type: 'deal', by: 'p1' }], makeCtx(), state);
     expect(again.game.round).toBe(2);
@@ -248,7 +277,11 @@ describe('players leaving', () => {
   it('a kicked moderator is cleared from the setup', () => {
     const state = run([
       ...join('An', 'Binh', 'Chi'),
-      { type: 'setup', by: 'p1', setup: { roles: {}, moderatorId: 'p2', publicRoles: true } },
+      {
+        type: 'setup',
+        by: 'p1',
+        setup: { ...MANUAL, roles: {}, moderatorId: 'p2', publicRoles: true },
+      },
       { type: 'kick', by: 'p1', target: 'p2' },
     ]);
     expect(state.game.setup.moderatorId).toBeNull();

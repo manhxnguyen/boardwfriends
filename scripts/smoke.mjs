@@ -11,7 +11,19 @@ import assert from 'node:assert/strict';
 
 const BASE = (process.argv[2] ?? 'http://localhost:5173').replace(/\/$/, '');
 const WS_BASE = BASE.replace(/^http/, 'ws');
-const PROTOCOL_VERSION = 2;
+const PROTOCOL_VERSION = 3;
+const SETUP = {
+  t: 'setup',
+  game: 'classic',
+  mode: 'manual',
+  roles: {},
+  oneNightRoles: {},
+  moderatorId: null,
+  publicRoles: true,
+  reveal: 'role',
+  dayMinutes: 5,
+  voice: false,
+};
 const TIMEOUT_MS = 5000;
 
 let step = 0;
@@ -57,9 +69,9 @@ class Client {
     this.ws.send(typeof msg === 'string' ? msg : JSON.stringify(msg));
   }
 
-  async hello(tok, name, v = PROTOCOL_VERSION) {
+  async hello(tok, name, v = PROTOCOL_VERSION, as = 'player') {
     await this.opened;
-    this.send({ t: 'hello', v, token: tok, name });
+    this.send({ t: 'hello', v, token: tok, name, as });
   }
 
   /** Resolves with the first queued (or future) message matching `predicate`, consuming it. */
@@ -262,12 +274,7 @@ await check('M1: host builds a deck, deals, and each phone sees only its own car
   const hostId = ids[0];
 
   // Host moderates; 4 cards for 4 players.
-  host.send({
-    t: 'setup',
-    roles: { werewolf: 1, seer: 1, villager: 2 },
-    moderatorId: hostId,
-    publicRoles: true,
-  });
+  host.send({ ...SETUP, roles: { werewolf: 1, seer: 1, villager: 2 }, moderatorId: hostId });
   await players[0].state((r) => r.game.setup?.roles.werewolf === 1, 'setup visible to players');
 
   // Non-host cannot deal.
@@ -305,6 +312,85 @@ await check('M1: host builds a deck, deals, and each phone sees only its own car
   const after = await players[1].state((r) => r.game.phase === 'setup', 'back to setup');
   assert.equal(after.game.setup.roles.werewolf, 1, 'deck is kept for the next round');
   for (const phone of phones) phone.close();
+});
+
+// ---------------------------------------------------------------------------
+// M2/M3: app-moderated games and the narrator display
+
+async function freshRoom(names) {
+  const { code } = await (await fetch(`${BASE}/api/rooms`, { method: 'POST' })).json();
+  const phones = [];
+  for (const [i, name] of names.entries()) {
+    const phone = new Client(code);
+    await phone.hello(token(`${code}${i}`), name);
+    phone.id = (await phone.next((m) => m.t === 'welcome', 'welcome')).you;
+    phones.push(phone);
+  }
+  return { code, phones };
+}
+
+const playing = (r) => (r.game.phase === 'playing' ? r.game.play : null);
+
+await check('M2: auto Classic deals to everyone; the display sees only public info', async () => {
+  const { code, phones } = await freshRoom(['A', 'B', 'C', 'D']);
+  const tv = new Client(code);
+  await tv.hello(token('tv'), 'TV', PROTOCOL_VERSION, 'display');
+  const welcome = await tv.next((m) => m.t === 'welcome', 'display welcome');
+  assert.equal(welcome.you, null);
+  assert.equal(welcome.room.display, true);
+  await phones[0].state((r) => r.lobby.displays === 1, 'display counted');
+
+  phones[0].send({ ...SETUP, mode: 'auto', roles: { werewolf: 1, seer: 1, villager: 2 } });
+  phones[0].send({ t: 'deal' });
+  const roles = [];
+  for (const phone of phones) {
+    const view = await phone.state((r) => playing(r), 'playing view');
+    assert.equal(view.game.play.kind, 'classic');
+    assert.equal(
+      view.game.play.seats.every((s) => s.role === null),
+      true,
+      'no roles leak',
+    );
+    roles.push(view.game.play.you.role);
+  }
+  assert.deepEqual(roles.sort(), ['seer', 'villager', 'villager', 'werewolf']);
+  const tvView = await tv.state((r) => playing(r), 'display playing view');
+  assert.equal(tvView.game.play.you, null);
+
+  phones[0].send({ t: 'start' });
+  const night = await tv.state((r) => playing(r)?.phase.kind === 'night', 'night 1');
+  assert.equal(night.game.play.phase.call, 'wolves');
+  assert.ok(
+    night.game.play.cues.some((c) => c.cue.k === 'night'),
+    'narration cue',
+  );
+
+  // Voice is off: the display cannot pause.
+  tv.send({ t: 'voice', cmd: 'pause' });
+  assert.equal((await tv.next((m) => m.t === 'error', 'voice refused')).code, 'not_allowed');
+  // The host can.
+  phones[0].send({ t: 'pause', paused: true });
+  await tv.state((r) => playing(r)?.paused === true, 'paused');
+  for (const c of [...phones, tv]) c.close();
+});
+
+await check('M3: One Night deals players + 3 center cards and runs the night', async () => {
+  const { code, phones } = await freshRoom(['A', 'B', 'C']);
+  phones[0].send({
+    ...SETUP,
+    game: 'one-night',
+    mode: 'auto',
+    oneNightRoles: { werewolf: 2, seer: 1, robber: 1, troublemaker: 1, villager: 1 },
+  });
+  phones[0].send({ t: 'deal' });
+  const views = [];
+  for (const phone of phones) views.push(await phone.state((r) => playing(r), 'one night view'));
+  assert.ok(views.every((v) => v.game.play.kind === 'one-night' && v.game.play.you.role));
+  phones[0].send({ t: 'start' });
+  const night = await phones[1].state((r) => playing(r)?.phase.kind === 'night', 'night');
+  assert.equal(night.game.play.phase.call, 'werewolf');
+  for (const c of phones) c.close();
+  void code;
 });
 
 console.log('\nAll smoke checks passed.');

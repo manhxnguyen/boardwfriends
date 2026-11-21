@@ -6,28 +6,30 @@
 - Frontend: Svelte 5 (runes) + Vite, installable PWA, Tailwind CSS v4
 - Realtime backend: Cloudflare Workers + Durable Objects (one Durable Object per game room) using the WebSocket Hibernation API; Durable Object Alarms for phase timers
 - Static hosting: Cloudflare Workers Static Assets (deployed together with the Worker)
-- Optional LAN/offline server: Bun (`Bun.serve` WebSocket), running the same engine
+- Offline LAN server: Node (≥ 22) + `ws`, bundled with esbuild into one file, running the same engine and RoomCore (Bun was the first plan, but Node is what the team already has installed)
 - Validation: Valibot schemas for every client → server message
 - Testing: Vitest (unit, engine), Playwright (multi-client E2E)
 - Tooling: pnpm workspaces, Wrangler, Prettier, ESLint
-- Fallback hosting: AWS Lightsail/EC2 running the Bun server (only if Cloudflare is not enough)
+- Fallback hosting: AWS Lightsail/EC2 running the LAN server bundle (only if Cloudflare is not enough)
 - No database: room state lives in Durable Object storage and expires automatically
 
 ## Repository Layout
 
 ```text
 apps/web         Svelte PWA: player screen + narrator (moderator) screen
-apps/worker      Cloudflare Worker (HTTP routing) + Room Durable Object (transport only)
-apps/lan-server  Bun server reusing the engine (optional, offline play)
+apps/worker      Cloudflare Worker (HTTP routing) + Room Durable Object (adapter around RoomCore)
+apps/lan-server  Node HTTP + WebSocket server for offline play (adapter around RoomCore)
+packages/server  RoomCore: transport-agnostic room server (sockets, broadcasts, timers, liveness)
 packages/engine  Pure game logic: phases, roles, rules, win conditions
 packages/protocol  Message types + Valibot schemas shared by client and server
-packages/content   Vietnamese/English text, narrator script, audio, card art
+apps/web/src/lib/content  Vietnamese/English text, narration, role texts (client only for now)
+apps/web/src/assets/art   Card art, picked up automatically by file name
 docs/rules       Rules for each game mode, every rule cited to its source
 ```
 
 ## Design Patterns & Standards
 
-- **Pure engine, thin transport.** `packages/engine` has no I/O, no timers, no `Date.now()`, no `Math.random()`. The core is a reducer: `apply(state, action, ctx) -> { state, events }`, with time and a seeded RNG injected through `ctx`. Durable Objects and the Bun server only route messages, persist state and schedule alarms. This is the equivalent of "skinny controllers + service objects".
+- **Pure engine, thin transport.** `packages/engine` has no I/O, no timers, no `Date.now()`, no `Math.random()`. The core is a reducer: `apply(state, action, ctx) -> { state, events }`, with time and a seeded RNG injected through `ctx`. Durable Objects and the LAN server are thin adapters around `RoomCore` (packages/server), which routes messages, persists state, schedules wake-ups and sends per-recipient views. This is the equivalent of "skinny controllers + service objects".
 - **Roles are plugins.** Each role lives in its own module (`roles/seer.ts`) exposing `id`, `team`, `nightOrder`, `canAct`, `resolve`, optional `onDeath` and `winCondition`. Adding a role must not require editing a central `switch`.
 - **Explicit phase machine.** Phases are a discriminated union (`LOBBY`, `ROLE_REVEAL`, `NIGHT`, `DAY`, `VOTE`, `GAME_OVER`, …). Only the engine changes phases.
 - **Per-player projection.** `viewFor(state, playerId)` returns only what that player may know. Clients never receive the full state. The narrator screen gets its own public-only projection.

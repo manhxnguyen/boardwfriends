@@ -1,20 +1,23 @@
 <script lang="ts">
-  import type { ClassicRoleId } from '@bwf/protocol';
+  import type { Snippet } from 'svelte';
+  import { cardBackArt } from '../content/art.ts';
   import { t } from '../i18n.svelte.ts';
-  import RoleCard from './RoleCard.svelte';
 
   /**
    * The card stays face down; it shows only while the player presses and holds it, so a glance
    * from a neighbour reveals nothing. `onFirstReveal` fires once, the first time it is shown.
    */
-  let { role, onFirstReveal }: { role: ClassicRoleId; onFirstReveal: () => void } = $props();
+  let {
+    onFirstReveal = () => {},
+    compact = false,
+    children,
+  }: { onFirstReveal?: () => void; compact?: boolean; children: Snippet } = $props();
 
   let holding = $state(false);
   let revealedOnce = false;
+  const back = cardBackArt();
 
-  function show(event: PointerEvent) {
-    event.preventDefault();
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  function reveal() {
     holding = true;
     if (!revealedOnce) {
       revealedOnce = true;
@@ -22,25 +25,27 @@
     }
   }
 
+  function show(event: PointerEvent) {
+    event.preventDefault();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    reveal();
+  }
+
   function hide() {
     holding = false;
   }
 
   function onKey(event: KeyboardEvent) {
-    if (event.key === ' ' || event.key === 'Enter') {
-      event.preventDefault();
-      holding = event.type === 'keydown';
-      if (holding && !revealedOnce) {
-        revealedOnce = true;
-        onFirstReveal();
-      }
-    }
+    if (event.key !== ' ' && event.key !== 'Enter') return;
+    event.preventDefault();
+    if (event.type === 'keydown') reveal();
+    else hide();
   }
 </script>
 
 <button
   type="button"
-  class="reveal mx-auto block w-full max-w-72 touch-none outline-none"
+  class="reveal mx-auto block w-full touch-none outline-none {compact ? 'max-w-40' : 'max-w-72'}"
   aria-label={t('holdToReveal')}
   aria-pressed={holding}
   onpointerdown={show}
@@ -53,14 +58,24 @@
   onblur={hide}
 >
   {#if holding}
-    <RoleCard {role} />
+    {@render children()}
   {:else}
     <div
-      class="flex aspect-[5/7] w-full flex-col items-center justify-center gap-4 rounded-2xl border-4 border-night-600 bg-night-900 shadow-2xl"
-      style:background-image="repeating-linear-gradient(45deg, #182a44 0 12px, #0f1b2d 12px 24px)"
+      class="relative flex aspect-[5/7] w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-2xl border-4 border-night-600 bg-night-900 shadow-2xl"
+      style:background-image={back
+        ? undefined
+        : 'repeating-linear-gradient(45deg, #182a44 0 12px, #0f1b2d 12px 24px)'}
     >
-      <span class="text-7xl" aria-hidden="true">🌕</span>
-      <span class="rounded-full bg-night-950/80 px-4 py-2 text-sm font-semibold text-moon">
+      {#if back}
+        <img src={back} alt="" class="absolute inset-0 size-full object-cover" draggable="false" />
+      {:else}
+        <span class={compact ? 'text-4xl' : 'text-7xl'} aria-hidden="true">🌕</span>
+      {/if}
+      <span
+        class="relative rounded-full bg-night-950/80 px-3 py-1.5 font-semibold text-moon {compact
+          ? 'text-xs'
+          : 'text-sm'}"
+      >
         👆 {t('holdToReveal')}
       </span>
     </div>

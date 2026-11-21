@@ -12,6 +12,7 @@
   "dependencies": {
     "@bwf/engine": "workspace:*",
     "@bwf/protocol": "workspace:*",
+    "@bwf/server": "workspace:*",
     "qrcode-generator": "^2.0.4"
   },
   "devDependencies": {

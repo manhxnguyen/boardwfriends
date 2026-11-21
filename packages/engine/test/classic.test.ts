@@ -11,14 +11,14 @@ import {
   roleDef,
   totalPoints,
   validateSetup,
+  type DeckSetup,
   type Setup,
 } from '../src/index.ts';
 
 const players = (n: number) => Array.from({ length: n }, (_, i) => `p${i + 1}`);
-const setupOf = (roles: Setup['roles'], moderatorId: string | null = null): Setup => ({
+const setupOf = (roles: Setup['roles'], moderatorId: string | null = null): DeckSetup => ({
   roles,
   moderatorId,
-  publicRoles: true,
 });
 const codes = (issues: ReturnType<typeof validateSetup>) => issues.map((i) => i.code);
 

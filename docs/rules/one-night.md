@@ -143,6 +143,14 @@ Xét theo **lá đang ở trước mặt mỗi người lúc cuối ván**.
 
 ---
 
+## 7b. Trong app (M3) [AD]
+
+- Ai cũng có thao tác để bấm trong mọi lượt đêm (ON-NIGHT, chống đoán vai). Người không có vai trong lượt đó được hỏi "Bạn nghi ai là Sói?".
+- Mỗi lượt gọi kéo dài **12 giây**, kể cả vai đang nằm ở giữa bàn.
+- Bợm rượu không chọn kịp thì app chọn ngẫu nhiên một lá giữa ([OW]: bắt buộc).
+- Thảo luận: mặc định 5 phút (chủ phòng chỉnh 1–15 phút). Chủ phòng có thể chuyển sang bỏ phiếu sớm. Bỏ phiếu: 30 giây, kết thúc sớm khi tất cả đã chọn.
+- Kẻ sao chép (Doppelgänger) **chưa có** trong app.
+
 ## 8. Việc còn mở
 
 - ❗ **Cần file Getting Started Guide** của ONUW để xác minh toàn bộ mục 4 (thảo luận, vote, hoà, "không ai quá 1 phiếu") và bảng bộ vai gợi ý chính thức.

@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@bwf/engine": "workspace:*",
-    "@bwf/protocol": "workspace:*"
+    "@bwf/protocol": "workspace:*",
+    "@bwf/server": "workspace:*"
   },
   "devDependencies": {
     "wrangler": "^4.164.0"

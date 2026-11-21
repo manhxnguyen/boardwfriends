@@ -9,6 +9,7 @@
     moderatorId = null,
     onRename,
     onKick,
+    onReorder,
   }: {
     lobby: LobbyView;
     you: string;
@@ -16,7 +17,17 @@
     moderatorId?: string | null;
     onRename: (name: string) => void;
     onKick: (playerId: string) => void;
+    /** Host only, before dealing: new seating order. */
+    onReorder?: ((order: string[]) => void) | undefined;
   } = $props();
+
+  function move(index: number, delta: number) {
+    const order = lobby.players.map((p) => p.id);
+    const target = index + delta;
+    if (!onReorder || target < 0 || target >= order.length) return;
+    [order[index], order[target]] = [order[target]!, order[index]!];
+    onReorder(order);
+  }
 
   let editing = $state(false);
   let draft = $state('');
@@ -43,10 +54,34 @@
     <span>{t('players')}</span>
     <span class="font-mono">{lobby.players.length}</span>
   </h2>
+  {#if onReorder}<p class="mb-2 text-xs text-slate-500">{t('seatHint')}</p>{/if}
   <ul class="divide-y divide-night-800 overflow-hidden rounded-xl bg-night-900">
-    {#each lobby.players as player (player.id)}
+    {#each lobby.players as player, index (player.id)}
       {@const isYou = player.id === you}
       <li class="flex min-h-14 items-center gap-3 px-4 py-2">
+        {#if onReorder}
+          <span class="flex flex-col">
+            <button
+              type="button"
+              class="px-1 text-xs leading-none text-slate-400 disabled:opacity-20"
+              aria-label={t('moveUp')}
+              disabled={index === 0}
+              onclick={() => move(index, -1)}
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              class="px-1 text-xs leading-none text-slate-400 disabled:opacity-20"
+              aria-label={t('moveDown')}
+              disabled={index === lobby.players.length - 1}
+              onclick={() => move(index, 1)}
+            >
+              ▼
+            </button>
+          </span>
+          <span class="w-4 text-center font-mono text-xs text-slate-500">{index + 1}</span>
+        {/if}
         <span
           class="size-2.5 shrink-0 rounded-full {player.connected ? 'bg-ok' : 'bg-slate-600'}"
           title={player.connected ? '' : t('offline')}

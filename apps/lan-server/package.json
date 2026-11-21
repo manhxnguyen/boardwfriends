@@ -1,0 +1,21 @@
+{
+  "name": "@bwf/lan-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node dist/server.mjs",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@bwf/engine": "workspace:*",
+    "@bwf/protocol": "workspace:*",
+    "@bwf/server": "workspace:*",
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/ws": "^8.18.1",
+    "esbuild": "0.28.2"
+  }
+}

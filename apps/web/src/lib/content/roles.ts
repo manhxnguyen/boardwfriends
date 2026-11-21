@@ -29,9 +29,6 @@ export const ROLE_ICON: Record<ClassicRoleId, string> = {
   mason: '🤝',
 };
 
-/** Real card art, filled in as files arrive in apps/web/public/art (see docs/art-spec.md). */
-export const ROLE_ART: Partial<Record<ClassicRoleId, string>> = {};
-
 export const FENCE_COLOR: Record<Fence, string> = {
   villager: '#1d3f7a',
   'village-support': '#2e86c1',

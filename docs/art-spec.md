@@ -139,5 +139,6 @@ Màu nước hoặc gouache, ánh đèn lồng ấm trên nền đêm lạnh. Ph
 
 ## 5. Cách gửi file
 
-- Bỏ vào thư mục `packages/content/art/source/` (mình sẽ tạo khi bắt đầu M1), hoặc gửi cho mình đường dẫn.
+- Bỏ thẳng vào thư mục `apps/web/src/assets/art/`, đặt tên theo ID vai (ví dụ `role-werewolf.png`, `card-back.png`). App **tự nhận hình** ở lần build sau, không cần sửa code; vai nào chưa có hình thì vẫn dùng emoji.
+- Vai của chế độ Một Đêm dùng chung tên: `role-robber.png`, `role-troublemaker.png`, `role-drunk.png`, `role-minion.png`…
 - Gửi trước **1–2 hình mẫu** (ví dụ Sói và Dân làng) để mình ghép thử vào khung thẻ, rồi hãy làm cả bộ.

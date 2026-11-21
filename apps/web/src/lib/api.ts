@@ -1,4 +1,5 @@
 import type { CreateRoomResponse, RoomInfoResponse } from '@bwf/protocol';
+import { serverInfo } from './server-info.svelte.ts';
 
 export class ApiError extends Error {
   constructor(readonly code: 'room_not_found' | 'network' | 'server') {
@@ -28,13 +29,25 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
   }
 }
 
-/** URL other phones should open. In dev on localhost, swap in the LAN address so the QR code works. */
-export function joinUrl(code: string): string {
+/** Origin other phones should use: LAN server address, dev LAN address, or this page's origin. */
+function shareOrigin(): string {
+  if (serverInfo.lanOrigin) return serverInfo.lanOrigin;
   const { protocol, hostname, port, origin } = location;
   const local = hostname === 'localhost' || hostname === '127.0.0.1';
-  const base =
-    local && __DEV_LAN_HOST__
-      ? `${protocol}//${__DEV_LAN_HOST__}${port ? `:${port}` : ''}`
-      : origin;
-  return `${base}/r/${code}`;
+  return local && __DEV_LAN_HOST__
+    ? `${protocol}//${__DEV_LAN_HOST__}${port ? `:${port}` : ''}`
+    : origin;
+}
+
+/** URL other phones should open (QR code). Reactive: re-read inside $derived. */
+export function joinUrl(code: string): string {
+  return `${shareOrigin()}/r/${code}`;
+}
+
+/**
+ * Narrator screen URL for the MacBook. Kept on this page's origin: on the LAN server the Mac
+ * should use http://localhost, the only plain-http address where the microphone is allowed.
+ */
+export function narratorUrl(code: string): string {
+  return `${location.origin}/r/${code}/tv`;
 }

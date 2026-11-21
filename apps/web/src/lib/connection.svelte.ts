@@ -3,7 +3,7 @@ import {
   PONG,
   PROTOCOL_VERSION,
   encode,
-  type ClientMessage,
+  type ClientMessageInput,
   type ErrorCode,
   type RoomView,
   type ServerMessage,
@@ -52,9 +52,12 @@ export class RoomConnection {
   ended = $state<EndReason | null>(null);
   /** Last non-fatal error from the server, for a transient toast. */
   lastError = $state<ErrorCode | null>(null);
+  /** serverClock - localClock, so countdowns match the server's timers. */
+  clockOffset = $state(0);
 
   readonly #code: string;
   readonly #name: () => string;
+  readonly #as: 'player' | 'display';
   #ws: WebSocket | null = null;
   #attempt = 0;
   #retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -62,9 +65,10 @@ export class RoomConnection {
   #pongTimer: ReturnType<typeof setTimeout> | undefined;
   #disposed = false;
 
-  constructor(code: string, name: () => string) {
+  constructor(code: string, name: () => string, as: 'player' | 'display' = 'player') {
     this.#code = code;
     this.#name = name;
+    this.#as = as;
     addEventListener('visibilitychange', this.#onWake);
     addEventListener('online', this.#onWake);
     addEventListener('pageshow', this.#onWake);
@@ -73,6 +77,16 @@ export class RoomConnection {
 
   get isHost(): boolean {
     return this.you !== null && this.room?.lobby.hostId === this.you;
+  }
+
+  /** Sends any client message (game actions, host controls, voice commands). */
+  send(message: ClientMessageInput): void {
+    this.#send(message);
+  }
+
+  /** Server time now, for countdowns. */
+  serverNow(): number {
+    return Date.now() + this.clockOffset;
   }
 
   setup(setup: SetupView): void {
@@ -135,7 +149,13 @@ export class RoomConnection {
 
     ws.onopen = () => {
       if (ws !== this.#ws) return;
-      this.#send({ t: 'hello', v: PROTOCOL_VERSION, token: deviceToken(), name: this.#name() });
+      this.#send({
+        t: 'hello',
+        v: PROTOCOL_VERSION,
+        token: deviceToken(),
+        name: this.#name() || 'TV',
+        as: this.#as,
+      });
       this.#startHeartbeat();
     };
     ws.onmessage = (event: MessageEvent<string>) => {
@@ -161,11 +181,11 @@ export class RoomConnection {
       case 'welcome':
         this.#attempt = 0;
         this.you = message.you;
-        this.room = message.room;
+        this.#setRoom(message.room);
         this.status = 'open';
         break;
       case 'state':
-        this.room = message.room;
+        this.#setRoom(message.room);
         break;
       case 'kicked':
         this.#end('kicked');
@@ -248,7 +268,12 @@ export class RoomConnection {
     }, HEARTBEAT_TIMEOUT_MS);
   }
 
-  #send(message: ClientMessage): void {
+  #setRoom(room: RoomView): void {
+    if (room.game.phase === 'playing') this.clockOffset = room.game.play.now - Date.now();
+    this.room = room;
+  }
+
+  #send(message: ClientMessageInput): void {
     if (this.#ws?.readyState === WebSocket.OPEN) this.#ws.send(encode(message));
   }
 

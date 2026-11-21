@@ -4,3 +4,6 @@ export * from './room.ts';
 export * from './classic/roles.ts';
 export * from './classic/setup.ts';
 export * from './classic/script.ts';
+export * from './classic/game.ts';
+export * from './one-night/roles.ts';
+export * from './one-night/game.ts';

@@ -44,6 +44,7 @@ export type LobbyAction =
   | { type: 'rename'; playerId: string; name: string }
   | { type: 'leave'; playerId: string }
   | { type: 'kick'; by: string; target: string }
+  | { type: 'reorder'; by: string; order: string[] }
   | { type: 'tick' };
 
 export type LobbyEvent =
@@ -76,6 +77,8 @@ export function applyLobby(
       return remove(state, action.playerId, 'left', ctx);
     case 'kick':
       return kick(state, action.by, action.target, ctx);
+    case 'reorder':
+      return reorder(state, action.by, action.order, ctx);
     case 'tick':
       return tick(state, ctx);
     default: {
@@ -86,9 +89,10 @@ export function applyLobby(
 }
 
 /** Public projection. Lobby info is the same for every player; tokens are stripped. */
-export function lobbyView(state: LobbyState): LobbyView {
+export function lobbyView(state: LobbyState, displays = 0): LobbyView {
   return {
     code: state.code,
+    displays,
     hostId: state.hostId,
     players: state.players.map((p) => ({
       id: p.id,
@@ -191,6 +195,19 @@ function remove(
     events.push({ type: 'host_changed', hostId: next.hostId });
   }
   return { ok: true, state: next, events };
+}
+
+/** Host sets the seating order; `order` must contain every player exactly once. */
+function reorder(state: LobbyState, by: string, order: string[], ctx: EngineContext): LobbyResult {
+  if (by !== state.hostId) return { ok: false, error: 'not_host' };
+  const ids = state.players.map((p) => p.id);
+  const valid =
+    order.length === ids.length &&
+    new Set(order).size === order.length &&
+    order.every((id) => ids.includes(id));
+  if (!valid) return { ok: false, error: 'invalid_action' };
+  const players = order.map((id) => state.players.find((p) => p.id === id)!);
+  return { ok: true, state: { ...state, players, lastActivityAt: ctx.now }, events: [] };
 }
 
 function tick(state: LobbyState, ctx: EngineContext): LobbyResult {
