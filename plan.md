@@ -205,7 +205,7 @@ Spec đầy đủ ở [docs/art-spec.md](docs/art-spec.md): kích thước, đ�
 
 1. ~~Internet ở chỗ cắm trại~~ ✅ Có wifi; MacBook làm máy quản trò.
 2. ~~Bộ luật chuẩn~~ ✅ Ultimate Werewolf + One Night. Bạn có tải được PDF luật bản Revised từ BGG không (cần tài khoản BGG)? Nếu không, mình sẽ tiếp tục theo [S1] và đánh dấu rõ những chỗ chưa xác minh.
-3. **Quản trò:** muốn app tự dẫn hoàn toàn, hay có cả chế độ người thật dẫn? (Mình đề xuất có cả hai: M1 làm chế độ người dẫn, M2 làm chế độ tự động.)
+3. ~~Quản trò~~ ✅ Có cả hai (chốt 21/11). Ma Sói Cổ điển: chủ phòng chọn "App tự dẫn" hoặc "Quản trò người thật" trong phần cài đặt phòng. Ma Sói Một Đêm: chỉ có app tự dẫn.
 4. ~~Số người~~ ✅ 8–10 người.
 5. ~~Ngôn ngữ~~ ✅ Tiếng Việt + English.
 6. ~~Frontend~~ ✅ Svelte 5.
