@@ -4,16 +4,7 @@
   /** Link the host opens on the MacBook to show the narrator screen. */
   let { url, code, displays }: { url: string; code: string; displays: number } = $props();
 
-  let copied = $state(false);
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      copied = true;
-      setTimeout(() => (copied = false), 2000);
-    } catch {
-      // Clipboard blocked; the link is visible anyway.
-    }
-  }
+  import CopyLinkButton from './CopyLinkButton.svelte';
 </script>
 
 <section class="mt-6 rounded-xl border border-night-700 bg-night-900 p-4">
@@ -25,11 +16,8 @@
   </h2>
   <p class="mt-1 text-xs text-slate-400">{t('narratorHint', { code })}</p>
   <p class="mt-2 font-mono text-sm break-all text-moon select-all">{url}</p>
-  <div class="mt-2 flex gap-2">
-    <button type="button" class="rounded-full bg-night-800 px-3 py-1.5 text-xs" onclick={copy}>
-      {copied ? '✓' : '📋'}
-      {t('copyLink')}
-    </button>
+  <div class="mt-2 flex items-start gap-2">
+    <CopyLinkButton {url} />
     <a
       class="rounded-full bg-night-800 px-3 py-1.5 text-xs"
       href={url}

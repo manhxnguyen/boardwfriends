@@ -2,6 +2,7 @@
   import { onDestroy, untrack } from 'svelte';
   import type { SetupView } from '@bwf/protocol';
   import { joinUrl, narratorUrl } from '../api.ts';
+  import { copyText } from '../clipboard.ts';
   import { RoomConnection, type EndReason } from '../connection.svelte.ts';
   import { t, type MessageKey } from '../i18n.svelte.ts';
   import { rememberName, savedName } from '../identity.ts';
@@ -78,10 +79,7 @@
   async function share() {
     try {
       if (navigator.share) await navigator.share({ title: t('appName'), url });
-      else {
-        await navigator.clipboard.writeText(url);
-        showToast(t('copied'));
-      }
+      else if (await copyText(url)) showToast(t('copied'));
     } catch {
       // User cancelled the share sheet.
     }
