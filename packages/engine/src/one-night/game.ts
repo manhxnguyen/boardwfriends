@@ -19,7 +19,8 @@ import { CENTER_CARDS, oneNightDef } from './roles.ts';
 /**
  * One Night Ultimate Werewolf with the app as announcer (M3). Rules: docs/rules/one-night.md.
  * [AD] marks app decisions where the rulebook relies on a human announcer or is not available
- * (the Getting Started Guide, which holds the day/vote rules, is still missing: 🔍 ON-VOTE-*).
+ * The day/vote rules (ON-DAY/ON-VOTE) are project decisions [AD]: the official Getting Started
+ * Guide that holds them has no digital copy (docs/rules/one-night.md §4).
  */
 
 export type OneNightCall =
@@ -373,14 +374,14 @@ function swapWithCenter(g: OneNightGame, playerId: string, index: number) {
 function accuse(g: OneNightGame, playerId: string, target: string, now: number): OneNightResultT {
   if (g.phase.kind !== 'vote') return fail('wrong_phase');
   if (!(playerId in g.original) || !(target in g.original)) return fail('invalid_action');
-  if (playerId === target) return fail('not_allowed'); // 🔍 ON-VOTE-01
+  if (playerId === target) return fail('not_allowed'); // ON-VOTE-01 [AD]
   g.votes[playerId] = target;
   if (g.seats.every((id) => id in g.votes)) resolve(g);
   void now;
   return ok(g);
 }
 
-/** 🔍 ON-VOTE-02..05 and ON-WIN-01..05. */
+/** ON-VOTE-02..05 [AD] and ON-WIN-01..05 [OW]. */
 function resolve(g: OneNightGame) {
   const tally: Record<string, number> = {};
   for (const target of Object.values(g.votes)) tally[target] = (tally[target] ?? 0) + 1;

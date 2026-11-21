@@ -175,12 +175,12 @@ Những điểm **thay đổi so với bản nháp v0.2** sau khi đọc tài li
 - **Thợ thuộc da (Tanner):** điểm là −2 (bản cũ ghi +1).
 - **Vai giai đoạn 2** đổi theo đúng bộ bài 2021: Sói con, Phù thuỷ tà, Thợ thuộc da, Thằng ngốc, Thầy phép, Kẻ mất ngủ, Hội kín, Chupacabra.
 
-### 7.2 Ma Sói Một Đêm: ⚠️ đã đối chiếu một phần
+### 7.2 Ma Sói Một Đêm: ✅ đã đối chiếu (phần bỏ phiếu là quyết định của dự án)
 
 Chi tiết ở **[docs/rules/one-night.md](docs/rules/one-night.md)**.
 
 - ✅ Vai, thứ tự gọi đêm, điều kiện thắng: đã có nguồn chính thức (rulebook ONUW 2015 và thẻ tra cứu điều kiện thắng của Bezier).
-- ❗ **Phần thảo luận và vote** (nhiều phiếu nhất thì chết, hoà thì tất cả chết, không ai quá 1 phiếu thì không ai chết) **chưa có nguồn**. Cần file _Getting Started Guide_ của ONUW.
+- ✅ **Phần thảo luận và vote** (nhiều phiếu nhất thì chết, hoà thì tất cả chết, không ai quá 1 phiếu thì không ai chết): chốt 21/11 là **quyết định của dự án [AD]**, vì _Getting Started Guide_ của ONUW không có bản số. Xem `docs/rules/one-night.md` mục 4.
 
 ---
 

@@ -5,16 +5,16 @@
 
 ## Nguồn
 
-| Mã       | Tài liệu                                                                                                                                                 | Ghi chú                                                                                                |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| **[OR]** | _One Night Ultimate Werewolf_ rules, © 2015 Bezier Games. File `source/one night/ONUW_rules-updated_for_BGG.pdf`                                         | Luật vai, lời dẫn, thứ tự gọi. **Nguồn chính.**                                                        |
-| **[OW]** | _ONUW Winning Conditions_ quick reference card, Bezier Games. File `source/one night/ONUW_3-up_WIN_Quick_Ref_Card.pdf`                                   | Điều kiện thắng và các luật hay bị quên                                                                |
-| **[OQ]** | _ONUW_ roles quick reference card, Bezier Games. File `source/one night/ONUW_3-up_Quick_Ref_Card.pdf`                                                    | Tóm tắt vai                                                                                            |
-| [FG]     | _One Night Ultimate Guide_ v1.0 (fan widbinjd, "created with the permission of Bezier Games"). File `source/one night/One_Night_Ultimate_Guide_v1.0.pdf` | Chỉ để tham khảo chéo                                                                                  |
-| ❗ [GSG] | _ONUW Getting Started Guide_, **CHƯA CÓ**                                                                                                                | [OR] ghi rằng luật này đi cùng Getting Started Guide. Phần **chuẩn bị, thảo luận, vote** nằm trong đó. |
-| **[AD]** | _App Decision_: quyết định của dự án                                                                                                                     | Tất cả đều là variant flag, có thể chỉnh                                                               |
+| Mã       | Tài liệu                                                                                                                                                 | Ghi chú                                                                                                                              |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **[OR]** | _One Night Ultimate Werewolf_ rules, © 2015 Bezier Games. File `source/one night/ONUW_rules-updated_for_BGG.pdf`                                         | Luật vai, lời dẫn, thứ tự gọi. **Nguồn chính.**                                                                                      |
+| **[OW]** | _ONUW Winning Conditions_ quick reference card, Bezier Games. File `source/one night/ONUW_3-up_WIN_Quick_Ref_Card.pdf`                                   | Điều kiện thắng và các luật hay bị quên                                                                                              |
+| **[OQ]** | _ONUW_ roles quick reference card, Bezier Games. File `source/one night/ONUW_3-up_Quick_Ref_Card.pdf`                                                    | Tóm tắt vai                                                                                                                          |
+| [FG]     | _One Night Ultimate Guide_ v1.0 (fan widbinjd, "created with the permission of Bezier Games"). File `source/one night/One_Night_Ultimate_Guide_v1.0.pdf` | Chỉ để tham khảo chéo                                                                                                                |
+| [GSG]    | _ONUW Getting Started Guide_ (tờ hướng dẫn in kèm hộp game), **không tìm được bản số**                                                                   | Đã tìm trên BGG (21/11/2026), không có bản do Bezier đăng. Phần ban ngày và bỏ phiếu vì vậy là quyết định của dự án [AD], xem mục 4. |
+| **[AD]** | _App Decision_: quyết định của dự án                                                                                                                     | Tất cả đều là variant flag, có thể chỉnh                                                                                             |
 
-> ⚠️ Các luật có 🔍 dưới đây được viết theo hiểu biết chung về ONUW, **chưa có nguồn chính thức**. Cần file [GSG] để xác minh.
+> ℹ️ Các luật gắn [AD] ở mục 2 và 4 là **quyết định của dự án** (chốt 21/11/2026), theo cách chơi One Night phổ biến, vì tài liệu chính thức [GSG] không có bản số. Nếu sau này có tờ hướng dẫn trong hộp game, cần đối chiếu lại.
 
 ---
 
@@ -32,7 +32,7 @@
 - **ON-SETUP-03**: Có thể dùng gần như bất kỳ tổ hợp vai nào. Nên chỉ thêm 1–2 vai mới mỗi lần để mọi người kịp làm quen. [OR tr.2]
 - **ON-SETUP-04**: Nếu dùng Hội kín thì **phải có đủ cả 2 lá Hội kín**. [OR tr.4]
 - **ON-SETUP-05**: Chỉ dùng Kẻ mất ngủ khi có Kẻ trộm và/hoặc Kẻ phá rối trong ván. [OR tr.5]
-- 🔍 **ON-SETUP-06**: Mỗi người xem lá của mình một lần rồi úp xuống. **Sau đó không được xem lại** cho đến cuối ván. [GSG]
+- **ON-SETUP-06** [AD]: Mỗi người xem lá của mình một lần rồi úp xuống. **Sau đó không được xem lại** cho đến cuối ván.
   - [AD] Trên điện thoại: chỉ được xem vai trong pha chia bài. Từ lúc bắt đầu đêm, vai bị ẩn.
 
 ## 3. Ban đêm
@@ -66,17 +66,19 @@
 - Hành động _bắt buộc_ (Bợm rượu) nếu hết giờ mà chưa chọn thì **app tự chọn ngẫu nhiên** một lá giữa.
 - Kẻ trộm, Kẻ phá rối và Bợm rượu đổi lá trên **máy chủ**, không phát ra tiếng hay rung trên điện thoại ai.
 
-## 4. Ban ngày và vote 🔍 (toàn bộ dựa vào [GSG], chưa có)
+## 4. Ban ngày và vote [AD] (quyết định của dự án, chốt 21/11/2026)
 
-- 🔍 **ON-DAY-01**: Mọi người thức dậy và thảo luận. Được nói bất cứ điều gì, kể cả nói dối, nhưng **không được cho xem lá**.
+Chưa có nguồn chính thức (xem [GSG] ở bảng nguồn). Các luật dưới đây theo cách chơi One Night phổ biến; mỗi luật có test trong `packages/engine/test/one-night.test.ts`.
+
+- **ON-DAY-01** [AD]: Mọi người thức dậy và thảo luận. Được nói bất cứ điều gì, kể cả nói dối, nhưng **không được cho xem lá**.
   - [AD] Thời lượng thảo luận mặc định 5 phút, có thể chỉnh.
-- 🔍 **ON-VOTE-01**: Hết giờ, **tất cả cùng lúc** chỉ vào một người (không được chỉ vào chính mình).
+- **ON-VOTE-01** [AD]: Hết giờ, **tất cả cùng lúc** chỉ vào một người (không được chỉ vào chính mình).
   - [AD] Trên app: mọi người chọn trên điện thoại, kết quả được công bố cùng lúc trên MacBook.
-- 🔍 **ON-VOTE-02**: Người có **nhiều phiếu nhất** chết.
-- 🔍 **ON-VOTE-03**: Nếu **hoà** thì **tất cả** những người hoà đều chết.
-- 🔍 **ON-VOTE-04**: Nếu **không ai nhận quá 1 phiếu** thì không ai chết.
+- **ON-VOTE-02** [AD]: Người có **nhiều phiếu nhất** chết.
+- **ON-VOTE-03** [AD]: Nếu **hoà** thì **tất cả** những người hoà đều chết.
+- **ON-VOTE-04** [AD]: Nếu **không ai nhận quá 1 phiếu** thì không ai chết.
 - **ON-VOTE-05** (Thợ săn): Nếu Thợ săn chết, người mà Thợ săn **đang chỉ (vote)** cũng chết, dù người đó nhận được bao nhiêu phiếu. [OR tr.5] [OQ]
-- 🔍 **ON-END-01**: Sau khi công bố, tất cả lật lá đang ở trước mặt để xác định phe và người thắng.
+- **ON-END-01** [AD]: Sau khi công bố, tất cả lật lá đang ở trước mặt để xác định phe và người thắng.
 
 ## 5. Vai
 
@@ -133,7 +135,7 @@ Xét theo **lá đang ở trước mặt mỗi người lúc cuối ván**.
 
 ## 7. Preset cho 8–10 người [AD]
 
-[OR] không đưa bảng preset, còn bảng gợi ý của [GSG] thì chưa có. Bộ dưới đây do dự án đề xuất, dùng **đúng 16 lá có trong hộp ONUW gốc** [OR tr.1]: Kẻ sao chép, 2 Sói, Tay sai, 2 Hội kín, Tiên tri, Kẻ trộm, Kẻ phá rối, Bợm rượu, Kẻ mất ngủ, Thợ săn, Thợ thuộc da, 3 Dân làng.
+[OR] không đưa bảng preset, và bảng gợi ý của [GSG] không có bản số. Bộ dưới đây do dự án đề xuất, dùng **đúng 16 lá có trong hộp ONUW gốc** [OR tr.1]: Kẻ sao chép, 2 Sói, Tay sai, 2 Hội kín, Tiên tri, Kẻ trộm, Kẻ phá rối, Bợm rượu, Kẻ mất ngủ, Thợ săn, Thợ thuộc da, 3 Dân làng.
 
 | Người | Tổng lá | Bộ vai                                                                                                            |
 | ----- | ------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -154,5 +156,5 @@ Xét theo **lá đang ở trước mặt mỗi người lúc cuối ván**.
 
 ## 8. Việc còn mở
 
-- ❗ **Cần file Getting Started Guide** của ONUW để xác minh toàn bộ mục 4 (thảo luận, vote, hoà, "không ai quá 1 phiếu") và bảng bộ vai gợi ý chính thức.
-- 🔍 Thời lượng mỗi lượt đêm (luật gốc dựa vào app của Bezier). Tạm đặt khoảng 10 giây mỗi vai, cấu hình được.
+- Nếu có tờ Getting Started Guide trong hộp game: đối chiếu lại mục 4 và bảng bộ vai gợi ý.
+- Thời lượng mỗi lượt đêm (luật gốc dựa vào app của Bezier): app dùng 12 giây, Kẻ sao chép 20 giây [AD].
