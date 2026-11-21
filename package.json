@@ -1,0 +1,26 @@
+{
+  "name": "boardwfriends",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.21.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @bwf/web dev",
+    "build": "pnpm --filter @bwf/web build",
+    "deploy": "pnpm --filter @bwf/web deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "prettier": "^3.10.1",
+    "prettier-plugin-svelte": "^4.2.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.1"
+  }
+}

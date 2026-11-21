@@ -1,0 +1,17 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "boardwfriends",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "observability": { "enabled": true },
+  "assets": {
+    // Single-page app: unknown paths (e.g. /r/ABCD) serve index.html.
+    "not_found_handling": "single-page-application",
+    // The Worker handles API and WebSocket routes before static assets.
+    "run_worker_first": ["/api/*"],
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ROOM", "class_name": "Room" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+}
