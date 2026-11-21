@@ -68,7 +68,7 @@ to Apple; nothing is recorded by this app, and listening stops when you press ðŸ
 | `pnpm lan`         | Build and run the offline LAN server                       |
 | `pnpm format`      | Prettier                                                   |
 | `pnpm build`       | Production build                                           |
-| `pnpm deploy`      | Build and deploy to Cloudflare (needs `wrangler login`)    |
+| `pnpm cf:deploy`   | Build and deploy to Cloudflare (needs `wrangler login`)    |
 
 ## Layout
 
