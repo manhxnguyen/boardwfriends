@@ -6,6 +6,8 @@ the cited rules.
 
 Idea, product direction and decisions: Manh Nguyen. Implementation assisted by Claude.
 
+Live: **https://boardwfriends.bwf-web.workers.dev**
+
 ## Game modes
 
 | Mode                                                                 | Players | Who moderates                                                                              |

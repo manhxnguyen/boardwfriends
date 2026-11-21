@@ -3,6 +3,10 @@
 > Trạng thái: **DRAFT v0.2**. Chưa implement. Các mục có dấu ❓ là câu hỏi mở, cần chốt cùng nhau.
 > Cập nhật: 2026-11-21
 
+## Bản đang chạy
+
+**https://boardwfriends.bwf-web.workers.dev** (Cloudflare Workers, gói miễn phí; deploy bằng `pnpm cf:deploy`).
+
 ## Các quyết định đã chốt
 
 | Ngày  | Quyết định                                                                                                                                                                                  |
