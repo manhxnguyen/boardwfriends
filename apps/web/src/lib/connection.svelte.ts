@@ -5,8 +5,9 @@ import {
   encode,
   type ClientMessage,
   type ErrorCode,
-  type LobbyView,
+  type RoomView,
   type ServerMessage,
+  type SetupView,
 } from '@bwf/protocol';
 import { getRoom } from './api.ts';
 import { deviceToken } from './identity.ts';
@@ -15,7 +16,13 @@ export type ConnectionStatus = 'connecting' | 'open' | 'reconnecting' | 'ended';
 
 /** Why the session is over; the UI shows a message and stops reconnecting. */
 export type EndReason =
-  'kicked' | 'left' | 'replaced' | 'room_closed' | 'room_not_found' | 'version_mismatch';
+  | 'kicked'
+  | 'left'
+  | 'replaced'
+  | 'room_closed'
+  | 'room_not_found'
+  | 'version_mismatch'
+  | 'game_in_progress';
 
 const HEARTBEAT_INTERVAL_MS = 15_000;
 const HEARTBEAT_TIMEOUT_MS = 6_000;
@@ -40,7 +47,7 @@ const CLOSE_REASONS: Record<number, EndReason> = {
  */
 export class RoomConnection {
   status = $state<ConnectionStatus>('connecting');
-  lobby = $state<LobbyView | null>(null);
+  room = $state<RoomView | null>(null);
   you = $state<string | null>(null);
   ended = $state<EndReason | null>(null);
   /** Last non-fatal error from the server, for a transient toast. */
@@ -65,7 +72,23 @@ export class RoomConnection {
   }
 
   get isHost(): boolean {
-    return this.you !== null && this.lobby?.hostId === this.you;
+    return this.you !== null && this.room?.lobby.hostId === this.you;
+  }
+
+  setup(setup: SetupView): void {
+    this.#send({ t: 'setup', ...setup });
+  }
+
+  deal(): void {
+    this.#send({ t: 'deal' });
+  }
+
+  markSeen(): void {
+    this.#send({ t: 'seen' });
+  }
+
+  reset(): void {
+    this.#send({ t: 'reset' });
   }
 
   rename(name: string): void {
@@ -104,7 +127,7 @@ export class RoomConnection {
   #connect(): void {
     if (this.#disposed || this.ended) return;
     clearTimeout(this.#retryTimer);
-    this.status = this.#attempt === 0 && !this.lobby ? 'connecting' : 'reconnecting';
+    this.status = this.#attempt === 0 && !this.room ? 'connecting' : 'reconnecting';
 
     const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
     const ws = new WebSocket(`${scheme}://${location.host}/api/rooms/${this.#code}/ws`);
@@ -138,18 +161,21 @@ export class RoomConnection {
       case 'welcome':
         this.#attempt = 0;
         this.you = message.you;
-        this.lobby = message.lobby;
+        this.room = message.room;
         this.status = 'open';
         break;
-      case 'lobby':
-        this.lobby = message.lobby;
+      case 'state':
+        this.room = message.room;
         break;
       case 'kicked':
         this.#end('kicked');
         break;
       case 'error':
         if (message.code === 'version_mismatch') this.#end('version_mismatch');
-        else this.lastError = message.code;
+        // Refused at the door: a round is being played and this device has no seat.
+        else if (message.code === 'game_in_progress' && this.status !== 'open') {
+          this.#end('game_in_progress');
+        } else this.lastError = message.code;
         break;
       default: {
         const exhaustive: never = message;
@@ -231,5 +257,8 @@ export class RoomConnection {
     this.status = 'ended';
     this.#stopHeartbeat();
     clearTimeout(this.#retryTimer);
+    const ws = this.#ws;
+    this.#ws = null;
+    if (ws?.readyState === WebSocket.OPEN) ws.close(1000, reason);
   }
 }

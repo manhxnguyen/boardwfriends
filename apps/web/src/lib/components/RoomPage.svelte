@@ -3,7 +3,7 @@
   import { t } from '../i18n.svelte.ts';
   import { rememberName, savedName } from '../identity.ts';
   import LangToggle from './LangToggle.svelte';
-  import Lobby from './Lobby.svelte';
+  import RoomScreen from './RoomScreen.svelte';
 
   let { code }: { code: string } = $props();
 
@@ -20,7 +20,7 @@
 </script>
 
 {#if ready}
-  <Lobby {code} />
+  <RoomScreen {code} />
 {:else}
   <header class="flex items-center justify-between">
     <span class="font-mono text-sm tracking-widest text-moon">{t('room')} {code}</span>

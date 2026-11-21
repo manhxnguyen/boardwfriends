@@ -1,14 +1,14 @@
 import { DurableObject } from 'cloudflare:workers';
 import {
-  applyLobby,
-  createLobby,
+  applyRoom,
+  createRoomState,
   findByToken,
   isExpired,
-  lobbyView,
   nextWakeAt,
-  type LobbyAction,
-  type LobbyEvent,
-  type LobbyState,
+  roomView,
+  type RoomAction,
+  type RoomEvent,
+  type RoomState,
 } from '@bwf/engine';
 import {
   PING,
@@ -40,7 +40,8 @@ const CLOSE = {
   stale: 4005,
 } as const;
 
-const STORAGE_KEY = 'lobby';
+// Bumped with the state shape; rooms stored under older keys are simply ignored.
+const STORAGE_KEY = 'room.v2';
 const MIN_ALARM_DELAY_MS = 15_000;
 /**
  * Clients ping every 15 s. A phone that vanished (wifi drop, screen locked) leaves a half-open
@@ -57,14 +58,14 @@ const SWEEP_INTERVAL_MS = 20_000;
  * open. State is reloaded from storage in the constructor after waking up.
  */
 export class Room extends DurableObject<Env> {
-  private state: LobbyState | null = null;
+  private state: RoomState | null = null;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     // Answered by the runtime without waking the object.
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair(PING, PONG));
     void ctx.blockConcurrencyWhile(async () => {
-      this.state = (await ctx.storage.get<LobbyState>(STORAGE_KEY)) ?? null;
+      this.state = (await ctx.storage.get<RoomState>(STORAGE_KEY)) ?? null;
     });
   }
 
@@ -74,13 +75,14 @@ export class Room extends DurableObject<Env> {
   /** Initializes the room. Returns false if this code is already in use. */
   async create(code: string): Promise<boolean> {
     if (this.state) return false;
-    this.state = createLobby(code, Date.now());
+    this.state = createRoomState(code, Date.now());
     await this.persist();
     return true;
   }
 
   async info(): Promise<RoomInfoResponse | null> {
-    return this.state ? { code: this.state.code, players: this.state.players.length } : null;
+    const lobby = this.state?.lobby;
+    return lobby ? { code: lobby.code, players: lobby.players.length } : null;
   }
 
   // ---------------------------------------------------------------------------
@@ -120,7 +122,7 @@ export class Room extends DurableObject<Env> {
   override async alarm(): Promise<void> {
     if (!this.state) return;
     const now = Date.now();
-    if (isExpired(this.state, now)) {
+    if (isExpired(this.state.lobby, now)) {
       for (const ws of this.ctx.getWebSockets()) closeQuietly(ws, CLOSE.roomClosed, 'expired');
       this.state = null;
       await this.ctx.storage.deleteAll();
@@ -143,7 +145,7 @@ export class Room extends DurableObject<Env> {
     const error = await this.dispatch({ type: 'join', token: hello.token, name: hello.name });
     if (error) return send(ws, { t: 'error', code: error });
 
-    const player = findByToken(this.state!, hello.token)!;
+    const player = findByToken(this.state!.lobby, hello.token)!;
     // One live socket per player: a newer tab/reconnect replaces the old one.
     for (const other of this.socketsOf(player.id)) {
       if (other !== ws) closeQuietly(other, CLOSE.replaced, 'replaced');
@@ -153,7 +155,7 @@ export class Room extends DurableObject<Env> {
       t: 'welcome',
       v: PROTOCOL_VERSION,
       you: player.id,
-      lobby: lobbyView(this.state!),
+      room: roomView(this.state!, player.id),
     });
   }
 
@@ -173,6 +175,24 @@ export class Room extends DurableObject<Env> {
         break;
       case 'kick':
         error = await this.dispatch({ type: 'kick', by: playerId, target: message.playerId });
+        break;
+      case 'setup': {
+        const { roles, moderatorId, publicRoles } = message;
+        error = await this.dispatch({
+          type: 'setup',
+          by: playerId,
+          setup: { roles, moderatorId, publicRoles },
+        });
+        break;
+      }
+      case 'deal':
+        error = await this.dispatch({ type: 'deal', by: playerId });
+        break;
+      case 'seen':
+        error = await this.dispatch({ type: 'seen', playerId });
+        break;
+      case 'reset':
+        error = await this.dispatch({ type: 'reset', by: playerId });
         break;
       default: {
         const exhaustive: never = message;
@@ -194,7 +214,7 @@ export class Room extends DurableObject<Env> {
       if (playerId) dropped.add(playerId);
     }
     for (const playerId of dropped) {
-      const known = this.state?.players.some((p) => p.id === playerId && p.connected);
+      const known = this.state?.lobby.players.some((p) => p.id === playerId && p.connected);
       if (known && this.socketsOf(playerId).length === 0) {
         await this.dispatch({ type: 'disconnected', playerId });
       }
@@ -206,17 +226,17 @@ export class Room extends DurableObject<Env> {
     if (!this.state || !playerId) return;
     // Ignore sockets that were replaced by a newer connection for the same player.
     const stillConnected = this.socketsOf(playerId).some((s) => s !== ws);
-    const known = this.state.players.some((p) => p.id === playerId);
+    const known = this.state.lobby.players.some((p) => p.id === playerId);
     if (!stillConnected && known) await this.dispatch({ type: 'disconnected', playerId });
   }
 
   /**
    * Runs an action through the engine, persists, reschedules the alarm, applies side effects
-   * and broadcasts the new lobby. Returns an error code if the engine rejected the action.
+   * and sends every player their own view. Returns an error code if the engine rejected it.
    */
-  private async dispatch(action: LobbyAction): Promise<ErrorCode | null> {
+  private async dispatch(action: RoomAction): Promise<ErrorCode | null> {
     if (!this.state) return 'room_not_found';
-    const result = applyLobby(this.state, action, { now: Date.now(), newId });
+    const result = applyRoom(this.state, action, { now: Date.now(), newId, random: secureRandom });
     if (!result.ok) return result.error;
 
     const changed = result.state !== this.state;
@@ -224,12 +244,12 @@ export class Room extends DurableObject<Env> {
     for (const event of result.events) this.applySideEffect(event);
     if (changed) {
       await this.persist();
-      this.broadcastLobby();
+      this.broadcast();
     }
     return null;
   }
 
-  private applySideEffect(event: LobbyEvent) {
+  private applySideEffect(event: RoomEvent) {
     if (event.type !== 'kicked') return;
     for (const ws of this.socketsOf(event.playerId)) {
       send(ws, { t: 'kicked' });
@@ -237,11 +257,14 @@ export class Room extends DurableObject<Env> {
     }
   }
 
-  private broadcastLobby() {
+  /** Each socket gets its own projection: players must never receive other players' cards. */
+  private broadcast() {
     if (!this.state) return;
-    const frame = encode({ t: 'lobby', lobby: lobbyView(this.state) });
     for (const ws of this.ctx.getWebSockets()) {
-      if (attachmentOf(ws).playerId) sendRaw(ws, frame);
+      const { playerId } = attachmentOf(ws);
+      if (playerId && ws.readyState === WebSocket.OPEN) {
+        send(ws, { t: 'state', room: roomView(this.state, playerId) });
+      }
     }
   }
 
@@ -262,9 +285,10 @@ export class Room extends DurableObject<Env> {
     // Never closer than MIN_ALARM_DELAY_MS: if host migration is overdue but nobody else is
     // connected, nextWakeAt() is in the past and would otherwise fire in a tight loop.
     const now = Date.now();
-    let at = Math.max(nextWakeAt(this.state), now + MIN_ALARM_DELAY_MS);
+    const { lobby } = this.state;
+    let at = Math.max(nextWakeAt(lobby), now + MIN_ALARM_DELAY_MS);
     // While anyone is connected, wake up regularly to sweep dead sockets.
-    if (this.state.players.some((p) => p.connected)) at = Math.min(at, now + SWEEP_INTERVAL_MS);
+    if (lobby.players.some((p) => p.connected)) at = Math.min(at, now + SWEEP_INTERVAL_MS);
     await this.ctx.storage.setAlarm(at);
   }
 }
@@ -293,6 +317,11 @@ function closeQuietly(ws: WebSocket, code: number, reason: string) {
   } catch {
     // Already closed.
   }
+}
+
+/** Cryptographically random float in [0, 1) for dealing cards. */
+function secureRandom(): number {
+  return crypto.getRandomValues(new Uint32Array(1))[0]! / 2 ** 32;
 }
 
 /** Short public player id (not secret; tokens are the secret). */

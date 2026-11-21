@@ -53,6 +53,28 @@ describe('parseClientMessage', () => {
   });
 });
 
+describe('game messages', () => {
+  const setup = (roles: unknown) =>
+    parseClientMessage(JSON.stringify({ t: 'setup', roles, moderatorId: null, publicRoles: true }));
+
+  it('accepts a deck', () => {
+    expect(setup({ werewolf: 2, seer: 1, villager: 5 }).ok).toBe(true);
+  });
+
+  it.each([
+    ['unknown role', { chupacabra: 1 }],
+    ['negative count', { werewolf: -1 }],
+    ['fractional count', { werewolf: 1.5 }],
+    ['absurd count', { villager: 999 }],
+  ])('rejects a deck with %s', (_label, roles) => {
+    expect(setup(roles).ok).toBe(false);
+  });
+
+  it.each(['deal', 'seen', 'reset'])('accepts %s', (t) => {
+    expect(parseClientMessage(JSON.stringify({ t })).ok).toBe(true);
+  });
+});
+
 describe('room codes', () => {
   it('normalizes user input', () => {
     expect(normalizeRoomCode(' abcd ')).toBe('ABCD');

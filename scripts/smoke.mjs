@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 
 const BASE = (process.argv[2] ?? 'http://localhost:5173').replace(/\/$/, '');
 const WS_BASE = BASE.replace(/^http/, 'ws');
-const PROTOCOL_VERSION = 1;
+const PROTOCOL_VERSION = 2;
 const TIMEOUT_MS = 5000;
 
 let step = 0;
@@ -79,9 +79,14 @@ class Client {
     });
   }
 
-  /** Waits for a lobby broadcast satisfying `predicate`. */
+  /** Waits for a state broadcast whose lobby satisfies `predicate`. */
   lobby(predicate, label) {
-    return this.next((m) => m.t === 'lobby' && predicate(m.lobby), label).then((m) => m.lobby);
+    return this.state((r) => predicate(r.lobby), label).then((r) => r.lobby);
+  }
+
+  /** Waits for a state broadcast whose room view satisfies `predicate`. */
+  state(predicate, label) {
+    return this.next((m) => m.t === 'state' && predicate(m.room), label).then((m) => m.room);
   }
 
   waitClosed() {
@@ -157,8 +162,8 @@ await check('first player joins and becomes host', async () => {
   await a.hello(tokA, 'An');
   const welcome = await a.next((m) => m.t === 'welcome', 'welcome');
   idA = welcome.you;
-  assert.equal(welcome.lobby.hostId, idA);
-  assert.equal(welcome.lobby.players.length, 1);
+  assert.equal(welcome.room.lobby.hostId, idA);
+  assert.equal(welcome.room.lobby.players.length, 1);
   assert.ok(!JSON.stringify(welcome).includes(tokA), 'token must not be broadcast');
 });
 
@@ -199,7 +204,7 @@ await check('reconnecting with the same token reclaims the same seat', async () 
   await b.hello(tokB, 'Bình 2');
   const welcome = await b.next((m) => m.t === 'welcome', 'welcome');
   assert.equal(welcome.you, idB);
-  assert.equal(welcome.lobby.players.length, 2);
+  assert.equal(welcome.room.lobby.players.length, 2);
   await a.lobby((l) => player(l, idB)?.connected === true, 'B online again');
 });
 
@@ -238,6 +243,68 @@ await check('host leaves; room becomes empty (close code 4002)', async () => {
   assert.equal(await a.waitClosed(), 4002);
   const info = await (await fetch(`${BASE}/api/rooms/${code}`)).json();
   assert.equal(info.players, 0);
+});
+
+// ---------------------------------------------------------------------------
+// M1: digital card deck
+
+await check('M1: host builds a deck, deals, and each phone sees only its own card', async () => {
+  const res = await fetch(`${BASE}/api/rooms`, { method: 'POST' });
+  const { code: gameCode } = await res.json();
+  const names = ['Host', 'P1', 'P2', 'P3', 'P4'];
+  const phones = names.map(() => new Client(gameCode));
+  const ids = [];
+  for (const [i, phone] of phones.entries()) {
+    await phone.hello(token(`g${i}`), names[i]);
+    ids.push((await phone.next((m) => m.t === 'welcome', 'welcome')).you);
+  }
+  const [host, ...players] = phones;
+  const hostId = ids[0];
+
+  // Host moderates; 4 cards for 4 players.
+  host.send({
+    t: 'setup',
+    roles: { werewolf: 1, seer: 1, villager: 2 },
+    moderatorId: hostId,
+    publicRoles: true,
+  });
+  await players[0].state((r) => r.game.setup?.roles.werewolf === 1, 'setup visible to players');
+
+  // Non-host cannot deal.
+  players[0].send({ t: 'deal' });
+  assert.equal((await players[0].next((m) => m.t === 'error', 'error')).code, 'not_host');
+
+  host.send({ t: 'deal' });
+  const hostView = await host.state((r) => r.game.phase === 'dealt', 'host dealt view');
+  assert.equal(hostView.game.yourRole, null, 'moderator has no card');
+  assert.equal(hostView.game.assignments.length, 4);
+  const table = Object.fromEntries(hostView.game.assignments.map((a) => [a.playerId, a.role]));
+
+  const roles = [];
+  for (const [i, phone] of players.entries()) {
+    const view = await phone.state((r) => r.game.phase === 'dealt', 'player dealt view');
+    assert.equal(view.game.assignments, null, 'players must not see the table');
+    assert.equal(view.game.yourRole, table[ids[i + 1]]);
+    roles.push(view.game.yourRole);
+  }
+  assert.deepEqual(roles.sort(), ['seer', 'villager', 'villager', 'werewolf']);
+
+  // Seen tracking reaches the moderator.
+  players[0].send({ t: 'seen' });
+  await host.state((r) => r.game.seenCount === 1, 'seen count 1');
+
+  // Strangers cannot join mid-round.
+  const late = new Client(gameCode);
+  await late.hello(token('late'), 'Late');
+  assert.equal((await late.next((m) => m.t === 'error', 'error')).code, 'game_in_progress');
+  late.close();
+
+  // Host collects the cards. Drop older queued frames so we only see post-reset state.
+  players[1].frames.length = 0;
+  host.send({ t: 'reset' });
+  const after = await players[1].state((r) => r.game.phase === 'setup', 'back to setup');
+  assert.equal(after.game.setup.roles.werewolf, 1, 'deck is kept for the next round');
+  for (const phone of phones) phone.close();
 });
 
 console.log('\nAll smoke checks passed.');

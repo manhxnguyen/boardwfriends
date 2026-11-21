@@ -6,12 +6,14 @@
     lobby,
     you,
     isHost,
+    moderatorId = null,
     onRename,
     onKick,
   }: {
     lobby: LobbyView;
     you: string;
     isHost: boolean;
+    moderatorId?: string | null;
     onRename: (name: string) => void;
     onKick: (playerId: string) => void;
   } = $props();
@@ -72,9 +74,14 @@
             {#if isYou}<span class="ml-1 text-xs text-moon">({t('you')})</span>{/if}
             {#if !player.connected}<span class="ml-1 text-xs">· {t('offline')}</span>{/if}
           </span>
+          {#if player.id === moderatorId}
+            <span class="rounded-full bg-village/20 px-1.5 py-0.5 text-xs" title={t('moderator')}>
+              🎙️<span class="sr-only">{t('moderator')}</span>
+            </span>
+          {/if}
           {#if player.isHost}
-            <span class="rounded-full bg-moon/15 px-2 py-0.5 text-xs text-moon">
-              👑 {t('host')}
+            <span class="rounded-full bg-moon/15 px-1.5 py-0.5 text-xs" title={t('host')}>
+              👑<span class="sr-only">{t('host')}</span>
             </span>
           {/if}
           {#if isYou}

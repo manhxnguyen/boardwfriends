@@ -10,6 +10,7 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings"
   },
   "dependencies": {
+    "@bwf/engine": "workspace:*",
     "@bwf/protocol": "workspace:*",
     "qrcode-generator": "^2.0.4"
   },

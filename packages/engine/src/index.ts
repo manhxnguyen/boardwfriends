@@ -1,1 +1,6 @@
 export * from './lobby.ts';
+export * from './random.ts';
+export * from './room.ts';
+export * from './classic/roles.ts';
+export * from './classic/setup.ts';
+export * from './classic/script.ts';

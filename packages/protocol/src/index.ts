@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 
 /** Bump whenever a message shape changes incompatibly. Clients on another version are rejected. */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 /** Room codes avoid look-alike characters (I/O/0/1) so they are easy to read aloud and type. */
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -23,6 +23,34 @@ export function isRoomCode(input: string): boolean {
   return ROOM_CODE_PATTERN.test(input);
 }
 
+/**
+ * Roles of the Classic mode (Ultimate Werewolf, 2021 role set). Rules and point values live in
+ * @bwf/engine; see docs/rules/classic.md. Chupacabra is left out until its card text is known.
+ */
+export const CLASSIC_ROLE_IDS = [
+  'villager',
+  'werewolf',
+  'seer',
+  'bodyguard',
+  'hunter',
+  'witch',
+  'wolf-cub',
+  'sorceress',
+  'tanner',
+  'village-idiot',
+  'spellcaster',
+  'insomniac',
+  'mason',
+] as const;
+export type ClassicRoleId = (typeof CLASSIC_ROLE_IDS)[number];
+
+export function isClassicRoleId(value: string): value is ClassicRoleId {
+  return (CLASSIC_ROLE_IDS as readonly string[]).includes(value);
+}
+
+/** Role id → number of cards. Missing ids mean 0. */
+export type RoleCounts = Partial<Record<ClassicRoleId, number>>;
+
 // ---------------------------------------------------------------------------
 // Client → server
 
@@ -38,6 +66,8 @@ const PlayerToken = v.pipe(v.string(), v.regex(/^[A-Za-z0-9_-]{16,64}$/, 'token_
 
 const PlayerId = v.pipe(v.string(), v.minLength(1), v.maxLength(64));
 
+const CardCount = v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_PLAYERS));
+
 export const HelloMessage = v.object({
   t: v.literal('hello'),
   v: v.number(),
@@ -45,25 +75,37 @@ export const HelloMessage = v.object({
   name: PlayerName,
 });
 
-export const RenameMessage = v.object({
-  t: v.literal('rename'),
-  name: PlayerName,
+export const RenameMessage = v.object({ t: v.literal('rename'), name: PlayerName });
+export const LeaveMessage = v.object({ t: v.literal('leave') });
+export const KickMessage = v.object({ t: v.literal('kick'), playerId: PlayerId });
+
+/** Host edits the deck. Sent on every change; the deck may be incomplete while editing. */
+export const SetupMessage = v.object({
+  t: v.literal('setup'),
+  roles: v.pipe(
+    v.record(v.picklist(CLASSIC_ROLE_IDS), CardCount),
+    v.check((roles) => Object.keys(roles).length <= CLASSIC_ROLE_IDS.length),
+  ),
+  moderatorId: v.nullable(PlayerId),
+  publicRoles: v.boolean(),
 });
 
-export const LeaveMessage = v.object({
-  t: v.literal('leave'),
-});
-
-export const KickMessage = v.object({
-  t: v.literal('kick'),
-  playerId: PlayerId,
-});
+/** Host deals the cards. */
+export const DealMessage = v.object({ t: v.literal('deal') });
+/** Player confirms they looked at their card. */
+export const SeenMessage = v.object({ t: v.literal('seen') });
+/** Host collects the cards and goes back to setup for a new round. */
+export const ResetMessage = v.object({ t: v.literal('reset') });
 
 export const ClientMessage = v.variant('t', [
   HelloMessage,
   RenameMessage,
   LeaveMessage,
   KickMessage,
+  SetupMessage,
+  DealMessage,
+  SeenMessage,
+  ResetMessage,
 ]);
 export type ClientMessage = v.InferOutput<typeof ClientMessage>;
 
@@ -102,6 +144,45 @@ export interface LobbyView {
   players: PlayerView[];
 }
 
+export interface SetupView {
+  roles: RoleCounts;
+  /** Player who runs the game and gets no card; null = no moderator in the app. */
+  moderatorId: string | null;
+  /** Whether everyone may see which roles are in the deck. */
+  publicRoles: boolean;
+}
+
+export interface Assignment {
+  playerId: string;
+  role: ClassicRoleId;
+  seen: boolean;
+}
+
+export type GameView =
+  | {
+      phase: 'setup';
+      /** Null when the deck is hidden from this player (publicRoles off, not host). */
+      setup: SetupView | null;
+    }
+  | {
+      phase: 'dealt';
+      round: number;
+      setup: SetupView | null;
+      moderatorId: string | null;
+      /** This player's own card; null for the moderator or someone who joined late. */
+      yourRole: ClassicRoleId | null;
+      youSeen: boolean;
+      seenCount: number;
+      dealtCount: number;
+      /** Full table, only for the moderator. */
+      assignments: Assignment[] | null;
+    };
+
+export interface RoomView {
+  lobby: LobbyView;
+  game: GameView;
+}
+
 export type ErrorCode =
   | 'version_mismatch'
   | 'invalid_message'
@@ -110,11 +191,15 @@ export type ErrorCode =
   | 'room_not_found'
   | 'not_host'
   | 'unknown_player'
-  | 'cannot_kick_self';
+  | 'cannot_kick_self'
+  | 'game_in_progress'
+  | 'wrong_phase'
+  | 'invalid_setup'
+  | 'no_card';
 
 export type ServerMessage =
-  | { t: 'welcome'; v: number; you: string; lobby: LobbyView }
-  | { t: 'lobby'; lobby: LobbyView }
+  | { t: 'welcome'; v: number; you: string; room: RoomView }
+  | { t: 'state'; room: RoomView }
   | { t: 'kicked' }
   | { t: 'error'; code: ErrorCode; detail?: string };
 
