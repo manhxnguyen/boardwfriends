@@ -3,6 +3,7 @@
   import type { CueEntry } from '@bwf/protocol';
   import { joinUrl } from '../api.ts';
   import { RoomConnection } from '../connection.svelte.ts';
+  import { sceneArt } from '../content/art.ts';
   import { callTitle, cueText } from '../content/narration.ts';
   import { ONE_NIGHT_ICON, ONE_NIGHT_TEXT } from '../content/one-night-roles.ts';
   import { ROLE_ICON, ROLE_TEXT, TEAM_TEXT } from '../content/roles.ts';
@@ -158,13 +159,22 @@
     play?.phase.kind === 'night' ? callTitle(play.phase.call, i18n.lang, oneNight) : null,
   );
   const voices = $derived(narrator.voicesFor(i18n.lang));
+  const scene = $derived.by(() => {
+    const phase = play?.phase;
+    if (phase?.kind === 'over') {
+      if (phase.winners.includes('wolf')) return sceneArt('win-wolves');
+      if (phase.winners.includes('village')) return sceneArt('win-village');
+    }
+    return sceneArt(isNight || !play ? 'bg-night' : 'bg-day');
+  });
 </script>
 
 <div
-  class="min-h-dvh w-full px-8 py-6 transition-colors duration-1000"
-  style:background={isNight
-    ? 'radial-gradient(circle at 80% 10%, #1c2b4a 0%, #070d17 60%)'
-    : 'radial-gradient(circle at 80% 10%, #3a4f7a 0%, #0f1b2d 65%)'}
+  class="min-h-dvh w-full bg-cover bg-center px-8 py-6"
+  style:background-color="#070d17"
+  style:background-image={scene
+    ? `linear-gradient(rgba(7,13,23,0.35), rgba(7,13,23,0.6)), url(${scene})`
+    : undefined}
 >
   <header class="flex items-center justify-between">
     <p class="font-mono text-2xl tracking-[0.3em] text-moon">{code}</p>

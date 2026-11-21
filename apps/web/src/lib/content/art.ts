@@ -26,3 +26,10 @@ export function roleArt(id: string): string | undefined {
 export function cardBackArt(): string | undefined {
   return byName.get('card-back');
 }
+
+/** Narrator-screen backgrounds: bg-night, bg-day, win-village, win-wolves. */
+export function sceneArt(
+  name: 'bg-night' | 'bg-day' | 'win-village' | 'win-wolves',
+): string | undefined {
+  return byName.get(name);
+}

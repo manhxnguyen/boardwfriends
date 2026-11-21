@@ -28,7 +28,11 @@
     <img src={art} alt="" class="absolute inset-0 size-full object-cover" draggable="false" />
   {/if}
 
-  <div class="relative z-10 px-4 pt-4 text-center">
+  <div
+    class="relative z-10 px-4 pt-4 pb-6 text-center {art
+      ? 'bg-gradient-to-b from-black/70 to-black/0'
+      : ''}"
+  >
     <p class="text-xs font-semibold tracking-widest uppercase opacity-80">{team}</p>
     <h3 class="mt-1 text-3xl font-bold drop-shadow">{title}</h3>
   </div>
