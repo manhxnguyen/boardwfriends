@@ -3,7 +3,7 @@
   import { ApiError, createRoom, getRoom } from '../api.ts';
   import { t, type MessageKey } from '../i18n.svelte.ts';
   import { rememberName, savedName } from '../identity.ts';
-  import { goToRoom } from '../router.svelte.ts';
+  import { goToDisplay, goToRoom } from '../router.svelte.ts';
   import LangToggle from './LangToggle.svelte';
   import RulesButton from './RulesButton.svelte';
 
@@ -34,6 +34,36 @@
   }
 
   const onCreate = () => run(async () => goToRoom(await createRoom()));
+
+  // ---- Narrator screen (laptop): no player name needed.
+  let tvCode = $state('');
+  let tvBusy = $state(false);
+  let tvError = $state<MessageKey | null>(null);
+  const tvCodeOk = $derived(isRoomCode(normalizeRoomCode(tvCode)));
+
+  async function runTv(action: () => Promise<void>) {
+    tvError = null;
+    tvBusy = true;
+    try {
+      await action();
+    } catch (e) {
+      tvError =
+        e instanceof ApiError && e.code === 'room_not_found' ? 'roomNotFound' : 'networkError';
+    } finally {
+      tvBusy = false;
+    }
+  }
+
+  const onTvCreate = () => runTv(async () => goToDisplay(await createRoom()));
+
+  const onTvOpen = (event: SubmitEvent) => {
+    event.preventDefault();
+    const normalized = normalizeRoomCode(tvCode);
+    return runTv(async () => {
+      if ((await getRoom(normalized)) === null) throw new ApiError('room_not_found');
+      goToDisplay(normalized);
+    });
+  };
 
   const onJoin = (event: SubmitEvent) => {
     event.preventDefault();
@@ -108,3 +138,40 @@
 {#if error}
   <p class="mt-4 rounded-lg bg-wolf/20 px-4 py-3 text-center text-sm" role="alert">{t(error)}</p>
 {/if}
+
+<section class="mt-10 rounded-2xl border border-night-700 bg-night-900 p-4">
+  <h2 class="font-semibold">🖥️ {t('tvTitle')}</h2>
+  <p class="mt-1 text-sm text-slate-400">{t('tvHint')}</p>
+  <button
+    type="button"
+    class="mt-3 w-full rounded-xl bg-night-700 px-4 py-3 font-semibold disabled:opacity-50"
+    disabled={tvBusy}
+    onclick={onTvCreate}
+  >
+    {t('tvCreate')}
+  </button>
+  <form class="mt-2 flex gap-2" onsubmit={onTvOpen}>
+    <input
+      class="min-w-0 flex-1 rounded-xl border border-night-600 bg-night-950 px-4 py-2.5 text-center font-mono text-xl tracking-[0.4em] uppercase outline-none focus:border-moon"
+      bind:value={tvCode}
+      maxlength={ROOM_CODE_LENGTH}
+      autocapitalize="characters"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label={t('roomCode')}
+      placeholder="ABCD"
+    />
+    <button
+      type="submit"
+      class="rounded-xl bg-night-700 px-4 font-semibold disabled:opacity-50"
+      disabled={tvBusy || !tvCodeOk}
+    >
+      {t('tvOpen')}
+    </button>
+  </form>
+  {#if tvError}
+    <p class="mt-3 rounded-lg bg-wolf/20 px-4 py-2 text-center text-sm" role="alert">
+      {t(tvError)}
+    </p>
+  {/if}
+</section>

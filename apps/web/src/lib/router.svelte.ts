@@ -30,6 +30,11 @@ export function goToRoom(code: string): void {
   navigate(`/r/${code}`);
 }
 
+/** Narrator screen for the laptop in the middle of the circle. */
+export function goToDisplay(code: string): void {
+  navigate(`/r/${code}/tv`);
+}
+
 function navigate(path: string): void {
   if (location.pathname !== path) history.pushState(null, '', path);
   router.route = parse(path);

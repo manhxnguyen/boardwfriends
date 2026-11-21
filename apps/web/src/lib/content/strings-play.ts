@@ -20,7 +20,13 @@ export const playVi = {
   voiceHint:
     'Màn hình dẫn truyện nghe các câu như “tôi đề cử Bình”, “ủng hộ”, “bỏ phiếu”, “tạm dừng”.',
   narrator: 'Màn hình dẫn truyện',
-  narratorHint: 'Mở link này trên MacBook (Chrome hoặc Safari), đặt giữa vòng tròn và bật loa.',
+  narratorHint:
+    'Trên MacBook: mở trang web này, chọn “Màn hình dẫn truyện” ở cuối trang chủ và nhập mã phòng {code}. Hoặc mở thẳng link dưới đây.',
+  tvTitle: 'Màn hình dẫn truyện (MacBook)',
+  tvHint:
+    'Dùng máy này làm người dẫn đặt giữa vòng tròn: hiện mã QR để mọi người vào, đọc lời dẫn và hiện đồng hồ. Người đầu tiên vào phòng bằng điện thoại sẽ là chủ phòng.',
+  tvCreate: 'Tạo phòng trên màn hình này',
+  tvOpen: 'Mở',
   narratorConnected: '{n} màn hình đang kết nối',
   openNarrator: 'Mở trên máy này',
   copyLink: 'Copy link',
@@ -193,7 +199,12 @@ export const playEn: Record<PlayKey, string> = {
   voiceHint: 'The narrator screen listens for “I nominate Binh”, “second”, “vote”, “pause”.',
   narrator: 'Narrator screen',
   narratorHint:
-    'Open this link on the MacBook (Chrome or Safari), put it in the middle and turn the sound on.',
+    'On the MacBook: open this site, choose “Narrator screen” at the bottom of the home page and enter room code {code}. Or open the link below directly.',
+  tvTitle: 'Narrator screen (MacBook)',
+  tvHint:
+    'Use this device as the narrator in the middle of the circle: it shows the QR code to join, reads the narration and shows the clock. The first phone to join becomes the host.',
+  tvCreate: 'Create a room on this screen',
+  tvOpen: 'Open',
   narratorConnected: '{n} screen(s) connected',
   openNarrator: 'Open on this device',
   copyLink: 'Copy link',

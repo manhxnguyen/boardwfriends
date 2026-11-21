@@ -188,7 +188,7 @@
         {@const setup = game.setup}
         <GameSettings {setup} onChange={updateSetup} />
         {#if setup.game === 'one-night' || setup.mode === 'auto'}
-          <NarratorLink url={narratorUrl(code)} displays={room.lobby.displays} />
+          <NarratorLink url={narratorUrl(code)} {code} displays={room.lobby.displays} />
         {/if}
         {#if setup.game === 'classic'}
           <DeckBuilder

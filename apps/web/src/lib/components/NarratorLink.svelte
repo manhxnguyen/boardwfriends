@@ -2,7 +2,7 @@
   import { t } from '../i18n.svelte.ts';
 
   /** Link the host opens on the MacBook to show the narrator screen. */
-  let { url, displays }: { url: string; displays: number } = $props();
+  let { url, code, displays }: { url: string; code: string; displays: number } = $props();
 
   let copied = $state(false);
   async function copy() {
@@ -23,7 +23,7 @@
       {t('narratorConnected', { n: String(displays) })}
     </span>
   </h2>
-  <p class="mt-1 text-xs text-slate-400">{t('narratorHint')}</p>
+  <p class="mt-1 text-xs text-slate-400">{t('narratorHint', { code })}</p>
   <p class="mt-2 font-mono text-sm break-all text-moon select-all">{url}</p>
   <div class="mt-2 flex gap-2">
     <button type="button" class="rounded-full bg-night-800 px-3 py-1.5 text-xs" onclick={copy}>

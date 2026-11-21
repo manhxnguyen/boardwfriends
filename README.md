@@ -34,6 +34,15 @@ pnpm dev
 `pnpm dev` runs the web app **and** the Cloudflare Worker + Durable Objects locally (via
 `@cloudflare/vite-plugin`) on port 5173, reachable from your local network.
 
+### At the table (recommended)
+
+1. On the MacBook in the middle of the circle, open the site and press **“Tạo phòng trên màn hình này”**
+   (Create a room on this screen) at the bottom of the home page. It shows a big QR code and room code.
+2. Everyone scans the QR code with their phone. The first phone to join becomes the host and picks the deck.
+3. Press **“Bật âm thanh”** on the MacBook so it can read the narration.
+
+If a phone already created the room, the MacBook can open it with **“Màn hình dẫn truyện” → room code → Mở**.
+
 ### Playing on real phones (same wifi)
 
 1. On the MacBook run `pnpm dev` and open <http://localhost:5173>. Create a room.

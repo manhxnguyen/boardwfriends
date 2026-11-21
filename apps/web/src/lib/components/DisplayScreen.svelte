@@ -221,6 +221,7 @@
         <div>
           <h1 class="text-5xl font-bold">🐺 {t('appName')}</h1>
           <p class="mt-3 text-xl text-slate-300">{t('scanToJoin')}</p>
+          <p class="mt-2 font-mono text-6xl font-bold tracking-[0.3em] text-moon">{code}</p>
           <p class="mt-6 text-lg text-slate-400">
             {players.length
               ? game.phase === 'setup'
