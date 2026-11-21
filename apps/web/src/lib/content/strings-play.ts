@@ -161,6 +161,15 @@ export const playVi = {
   voiceHelp:
     'Nói: “tôi đề cử <tên>”, “ủng hộ”, “bỏ phiếu”, “tạm dừng”, “tiếp tục”, “kết thúc ngày”, “đọc lại”.',
   repeat: 'Đọc lại',
+  rules: 'Luật chơi',
+  close: 'Đóng',
+  rolesTitle: 'Các vai',
+  inThisGame: 'trong ván này',
+  sourcesTitle: 'Nguồn tham khảo',
+  rulesNote:
+    'Luật được tóm tắt bằng lời của nhóm, dựa trên tài liệu chính thức của Bezier Games. Mỗi dòng ghi nguồn (ví dụ “GS tr.3” = tài liệu GS, trang 3); chạm vào để xem nguồn ở cuối trang.',
+  rulesCopyright:
+    'Ultimate Werewolf và One Night Ultimate Werewolf là thương hiệu của Bezier Games. Ứng dụng này do người hâm mộ làm để chơi cùng bạn bè, không liên kết với nhà phát hành.',
 };
 
 export type PlayKey = keyof typeof playVi;
@@ -318,4 +327,13 @@ export const playEn: Record<PlayKey, string> = {
   voiceHelp:
     'Say: “I nominate <name>”, “second”, “vote”, “pause”, “resume”, “end the day”, “repeat”.',
   repeat: 'Repeat',
+  rules: 'Rules',
+  close: 'Close',
+  rolesTitle: 'Roles',
+  inThisGame: 'in this game',
+  sourcesTitle: 'Sources',
+  rulesNote:
+    'Rules summarised in our own words from the official Bezier Games documents. Each line cites its source (e.g. “GS p.3” = document GS, page 3); tap it to jump to the source list.',
+  rulesCopyright:
+    'Ultimate Werewolf and One Night Ultimate Werewolf are trademarks of Bezier Games. This is a fan-made app for playing with friends and is not affiliated with the publisher.',
 };

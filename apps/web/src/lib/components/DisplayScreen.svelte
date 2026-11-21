@@ -15,6 +15,7 @@
   import { WakeLock } from '../wakeLock.svelte.ts';
   import Countdown from './Countdown.svelte';
   import LangToggle from './LangToggle.svelte';
+  import RulesButton from './RulesButton.svelte';
 
   /** Narrator screen for the MacBook in the middle of the circle: public view + voice. */
   let { code }: { code: string } = $props();
@@ -196,6 +197,12 @@
           {narrator.speaking ? t('soundOn') : t('soundOff')}
         </button>
       {/if}
+      <RulesButton
+        large
+        game={game?.setup?.game ?? 'classic'}
+        classicDeck={game?.setup?.roles ?? null}
+        oneNightDeck={game?.setup?.oneNightRoles ?? null}
+      />
       <LangToggle />
     </div>
   </header>

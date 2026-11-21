@@ -19,6 +19,7 @@
   import OneNightPlay from './OneNightPlay.svelte';
   import PlayerList from './PlayerList.svelte';
   import QrCard from './QrCard.svelte';
+  import RulesButton from './RulesButton.svelte';
   import RoleCard from './RoleCard.svelte';
 
   let { code }: { code: string } = $props();
@@ -119,7 +120,14 @@
       {code} · {t('round', { n: String(game.round) })}
     </span>
   {/if}
-  <LangToggle />
+  <div class="flex items-center gap-2">
+    <RulesButton
+      game={game?.setup?.game ?? 'classic'}
+      classicDeck={game?.setup?.roles ?? null}
+      oneNightDeck={game?.setup?.oneNightRoles ?? null}
+    />
+    <LangToggle />
+  </div>
 </header>
 
 {#if conn.ended}

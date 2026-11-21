@@ -5,6 +5,7 @@
   import { rememberName, savedName } from '../identity.ts';
   import { goToRoom } from '../router.svelte.ts';
   import LangToggle from './LangToggle.svelte';
+  import RulesButton from './RulesButton.svelte';
 
   let name = $state(savedName());
   let code = $state('');
@@ -46,7 +47,10 @@
 
 <header class="flex items-center justify-between">
   <span class="text-sm font-semibold tracking-widest text-moon uppercase">boardwfriends</span>
-  <LangToggle />
+  <div class="flex items-center gap-2">
+    <RulesButton />
+    <LangToggle />
+  </div>
 </header>
 
 <section class="mt-10 mb-8 text-center">
