@@ -6,7 +6,7 @@ export * from './roles.ts';
 export * from './views.ts';
 
 /** Bump whenever a message shape changes incompatibly. Clients on another version are rejected. */
-export const PROTOCOL_VERSION = 3;
+export const PROTOCOL_VERSION = 4;
 
 /** Room codes avoid look-alike characters (I/O/0/1) so they are easy to read aloud and type. */
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';

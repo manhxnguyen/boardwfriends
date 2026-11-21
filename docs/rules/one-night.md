@@ -103,7 +103,7 @@
 - Có thể thử ván chỉ có 1 Sói, hoặc chia ngẫu nhiên toàn bộ lá, hoặc làm một làng không có lá Dân làng nào.
 - Đừng lo nếu một phe có vẻ thắng quá nhiều; lối chơi sẽ tự cân bằng dần sau vài ván.
 
-### 5.3 Kẻ sao chép (Doppelgänger): giai đoạn sau
+### 5.3 Kẻ sao chép (Doppelgänger): ✅ đã có trong app
 
 Vai phức tạp nhất. Luật đầy đủ ở [OR tr.2–3]. Tóm tắt:
 
@@ -149,10 +149,10 @@ Xét theo **lá đang ở trước mặt mỗi người lúc cuối ván**.
 - Mỗi lượt gọi kéo dài **12 giây**, kể cả vai đang nằm ở giữa bàn.
 - Bợm rượu không chọn kịp thì app chọn ngẫu nhiên một lá giữa ([OW]: bắt buộc).
 - Thảo luận: mặc định 5 phút (chủ phòng chỉnh 1–15 phút). Chủ phòng có thể chuyển sang bỏ phiếu sớm. Bỏ phiếu: 30 giây, kết thúc sớm khi tất cả đã chọn.
-- Kẻ sao chép (Doppelgänger) **chưa có** trong app.
+- Lượt của Kẻ sao chép dài **20 giây**, vì có thể vừa xem vừa phải làm hành động của vai mới chép. Kẻ sao chép chép Bợm rượu mà không chọn kịp thì app chọn ngẫu nhiên.
+- Thông tin Kẻ trộm, Tiên tri hay Kẻ mất ngủ nhìn thấy là **lá bài thật** (ví dụ "Kẻ sao chép"), giống như khi chơi bằng bài giấy. Vai mà lá đó đại diện chỉ được công bố lúc kết quả.
 
 ## 8. Việc còn mở
 
 - ❗ **Cần file Getting Started Guide** của ONUW để xác minh toàn bộ mục 4 (thảo luận, vote, hoà, "không ai quá 1 phiếu") và bảng bộ vai gợi ý chính thức.
 - 🔍 Thời lượng mỗi lượt đêm (luật gốc dựa vào app của Bezier). Tạm đặt khoảng 10 giây mỗi vai, cấu hình được.
-- Kẻ sao chép làm sau cùng (M4 trở đi).

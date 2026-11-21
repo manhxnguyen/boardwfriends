@@ -116,6 +116,7 @@ export const playVi = {
   troublemakerTitle: 'Đổi lá của 2 người',
   drunkTitle: 'Chọn 1 lá ở giữa để đổi',
   loneWolfTitle: 'Bạn là Sói duy nhất: xem 1 lá giữa',
+  doppelTitle: 'Sao chép vai của ai?',
   skipAction: 'Bỏ qua',
   accuseTitle: 'Bạn nghi ai là Sói?',
   dealt: 'Lá ban đầu',
@@ -140,6 +141,7 @@ export const playVi = {
   kPlayer: '{name} đang cầm lá {role}',
   kRobbed: 'Bạn lấy lá của {name}: giờ bạn là {role}',
   kSelf: 'Lá của bạn bây giờ: {role}',
+  kDoppel: 'Bạn sao chép {name}: giờ bạn là {role}',
 
   // Narrator display
   enableSound: '🔊 Bật âm thanh',
@@ -273,6 +275,7 @@ export const playEn: Record<PlayKey, string> = {
   troublemakerTitle: 'Swap two players',
   drunkTitle: 'Pick a center card to swap with',
   loneWolfTitle: 'You are the only wolf: look at one center card',
+  doppelTitle: 'Copy whose role?',
   skipAction: 'Skip',
   accuseTitle: 'Who is a werewolf?',
   dealt: 'Dealt',
@@ -296,6 +299,7 @@ export const playEn: Record<PlayKey, string> = {
   kPlayer: '{name} holds {role}',
   kRobbed: 'You took {name}’s card: you are now {role}',
   kSelf: 'Your card now: {role}',
+  kDoppel: 'You copied {name}: you are now {role}',
 
   enableSound: '🔊 Turn sound on',
   soundOn: '🔊 Speaking',

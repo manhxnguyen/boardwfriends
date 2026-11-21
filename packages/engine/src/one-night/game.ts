@@ -23,16 +23,35 @@ import { CENTER_CARDS, oneNightDef } from './roles.ts';
  */
 
 export type OneNightCall =
-  'werewolf' | 'minion' | 'mason' | 'seer' | 'robber' | 'troublemaker' | 'drunk' | 'insomniac';
+  | 'doppelganger'
+  | 'werewolf'
+  | 'minion'
+  | 'mason'
+  | 'seer'
+  | 'robber'
+  | 'troublemaker'
+  | 'drunk'
+  | 'insomniac'
+  /** #9a: a Doppelgänger who copied the Insomniac looks at their card again [OR p.6]. */
+  | 'doppel-insomniac';
+
+/** Roles whose action the Doppelgänger performs immediately during its own call [OR p.2]. */
+const IMMEDIATE: readonly OneNightRoleId[] = ['seer', 'robber', 'troublemaker', 'drunk'];
 
 export interface OneNightTimings {
   /** Every call lasts the same time, even for roles sitting in the center [AD, ON-NIGHT]. */
   stepMs: number;
+  /** The Doppelgänger may look and then act in the same call, so it gets longer. */
+  doppelStepMs: number;
   dayMs: number;
   voteMs: number;
 }
 
-export const ONE_NIGHT_TIMINGS: Omit<OneNightTimings, 'dayMs'> = { stepMs: 12_000, voteMs: 30_000 };
+export const ONE_NIGHT_TIMINGS: Omit<OneNightTimings, 'dayMs'> = {
+  stepMs: 12_000,
+  doppelStepMs: 20_000,
+  voteMs: 30_000,
+};
 
 type Phase =
   | { kind: 'reveal' }
@@ -48,6 +67,8 @@ export interface OneNightGame {
   /** Card each player holds now (changes during the night). */
   cards: Record<string, OneNightRoleId>;
   center: OneNightRoleId[];
+  /** Role the Doppelgänger copied (null until it looks). */
+  doppelCopy: OneNightRoleId | null;
   calls: OneNightCall[];
   phase: Phase;
   paused: { at: number } | null;
@@ -81,6 +102,7 @@ export interface OneNightContext {
 }
 
 const ORDER: readonly OneNightCall[] = [
+  'doppelganger',
   'werewolf',
   'minion',
   'mason',
@@ -89,6 +111,7 @@ const ORDER: readonly OneNightCall[] = [
   'troublemaker',
   'drunk',
   'insomniac',
+  'doppel-insomniac',
 ];
 
 /** Builds the game from an already shuffled deck: first cards to the seats, last 3 to the center. */
@@ -108,8 +131,13 @@ export function startOneNight(input: {
     original,
     cards: { ...original },
     center: deck.slice(seats.length),
+    doppelCopy: null,
     // ON-NIGHT: call every role in the deck, even if its card ended up in the center.
-    calls: ORDER.filter((call) => (input.roles[call] ?? 0) > 0),
+    calls: ORDER.filter((call) =>
+      call === 'doppel-insomniac'
+        ? (input.roles.doppelganger ?? 0) > 0 && (input.roles.insomniac ?? 0) > 0
+        : (input.roles[call] ?? 0) > 0,
+    ),
     phase: { kind: 'reveal' },
     paused: null,
     timings: { ...ONE_NIGHT_TIMINGS, dayMs: input.dayMinutes * 60_000, ...input.timings },
@@ -211,11 +239,12 @@ function pause(g: OneNightGame, paused: boolean, now: number): OneNightResultT {
 
 function openStep(g: OneNightGame, step: number, at: number) {
   const call = g.calls[step]!;
-  g.phase = { kind: 'night', step, endsAt: at + g.timings.stepMs };
+  const ms = call === 'doppelganger' ? g.timings.doppelStepMs : g.timings.stepMs;
+  g.phase = { kind: 'night', step, endsAt: at + ms };
   g.done = [];
   cue(g, { k: 'call-open', call, note: null });
 
-  const wolves = holdersOf(g, 'werewolf', 'original');
+  const wolves = actingAs(g, 'werewolf');
   if (call === 'werewolf') {
     for (const id of wolves) learn(g, id, { k: 'wolves', ids: wolves });
   }
@@ -224,11 +253,16 @@ function openStep(g: OneNightGame, step: number, at: number) {
       learn(g, id, { k: 'on-minion', ids: wolves });
   }
   if (call === 'mason') {
-    const masons = holdersOf(g, 'mason', 'original');
+    const masons = actingAs(g, 'mason');
     for (const id of masons) learn(g, id, { k: 'masons', ids: masons });
   }
   if (call === 'insomniac') {
     for (const id of holdersOf(g, 'insomniac', 'original')) {
+      learn(g, id, { k: 'on-self', role: g.cards[id]! });
+    }
+  }
+  if (call === 'doppel-insomniac' && g.doppelCopy === 'insomniac') {
+    for (const id of holdersOf(g, 'doppelganger', 'original')) {
       learn(g, id, { k: 'on-self', role: g.cards[id]! });
     }
   }
@@ -240,6 +274,12 @@ function closeStep(g: OneNightGame, random: Random) {
   // [OW] the Drunk must swap; if they did not choose in time, pick a center card for them [AD].
   if (call === 'drunk') {
     for (const id of holdersOf(g, 'drunk', 'original')) {
+      if (!g.done.includes(id)) swapWithCenter(g, id, Math.floor(random() * CENTER_CARDS));
+    }
+  }
+  // A Doppelgänger-Drunk must swap too.
+  if (call === 'doppelganger' && g.doppelCopy === 'drunk') {
+    for (const id of holdersOf(g, 'doppelganger', 'original')) {
       if (!g.done.includes(id)) swapWithCenter(g, id, Math.floor(random() * CENTER_CARDS));
     }
   }
@@ -279,6 +319,18 @@ function act(
       if (players.length !== 1 || !target) return fail('invalid_action');
       g.suspects[playerId] = target;
       return ok(g);
+    case 'on-doppel': {
+      // [OR p.2] look at (not move) another player's card and become that role.
+      if (players.length !== 1 || center.length || !target) return fail('invalid_action');
+      const copy = g.cards[target]!;
+      g.doppelCopy = copy;
+      learn(g, playerId, { k: 'on-doppel', target, role: copy });
+      // A Doppelgänger-Minion learns the werewolves at the end of its own call [OR p.3].
+      if (copy === 'minion') learn(g, playerId, { k: 'on-minion', ids: actingAs(g, 'werewolf') });
+      // Roles with an immediate action keep the prompt open for that action.
+      if (IMMEDIATE.includes(copy)) return ok(g);
+      break;
+    }
     case 'on-werewolf': // Lone wolf peeks at one center card (ON-NIGHT-03).
       if (players.length || center.length !== 1) return fail('invalid_action');
       learn(g, playerId, { k: 'on-center', index: center[0]!, role: g.center[center[0]!]! });
@@ -337,18 +389,19 @@ function resolve(g: OneNightGame) {
   const deaths = new Set(max > 1 ? Object.keys(tally).filter((id) => tally[id] === max) : []);
   // ON-VOTE-05: a dying Hunter takes the player they voted for (chains if that is a Hunter too).
   let grew = true;
+  // Whoever holds the Doppelgänger card is the role it copied [OR p.2, OW].
+  const final = Object.fromEntries(g.seats.map((id) => [id, effective(g, g.cards[id]!)]));
   while (grew) {
     grew = false;
     for (const id of [...deaths]) {
       const target = g.votes[id];
-      if (g.cards[id] === 'hunter' && target && !deaths.has(target)) {
+      if (final[id] === 'hunter' && target && !deaths.has(target)) {
         deaths.add(target);
         grew = true;
       }
     }
   }
 
-  const final = g.cards;
   const dead = [...deaths];
   const isDead = (id: string) => deaths.has(id);
   const wolves = g.seats.filter((id) => final[id] === 'werewolf');
@@ -385,8 +438,9 @@ function resolve(g: OneNightGame) {
 
   g.result = {
     original: { ...g.original },
-    final: { ...final },
+    final: { ...g.cards },
     center: [...g.center],
+    doppelCopy: g.doppelCopy,
     votes: { ...g.votes },
     deaths: dead,
     winningPlayers,
@@ -421,28 +475,52 @@ function promptFor(g: OneNightGame, id: string): Prompt {
     pack: null,
     note: null as string | null,
   };
-  const suspect: Prompt = {
+  const suspect: PickPrompt = {
     ...base,
     purpose: 'suspect',
     locked: false,
     selected: g.suspects[id] ? [g.suspects[id]] : [],
   };
 
-  if (g.original[id] !== call) return suspect;
-  const wolves = holdersOf(g, 'werewolf', 'original');
-  switch (call) {
-    case 'werewolf':
-      if (wolves.length === 1 && g.loneWolf) {
-        return {
-          ...base,
-          purpose: 'on-werewolf',
-          options: [],
-          count: 0,
-          centerCount: 1,
-          note: 'lone',
-        };
-      }
-      return { ...suspect, note: 'pack' };
+  const isDoppel = g.original[id] === 'doppelganger';
+  if (call === 'doppelganger') {
+    if (!isDoppel) return suspect;
+    if (!g.doppelCopy) return { ...base, purpose: 'on-doppel' };
+    // After copying: do the copied action now, if it has one; otherwise keep tapping.
+    return IMMEDIATE.includes(g.doppelCopy) && !done
+      ? actionPrompt(g.doppelCopy, base, suspect)
+      : { ...suspect, note: 'doppel' };
+  }
+  if (call === 'doppel-insomniac') {
+    return { ...suspect, note: isDoppel && g.doppelCopy === 'insomniac' ? 'insomniac' : null };
+  }
+  // A Doppelgänger who copied the Werewolf or Mason wakes with them [OR p.2].
+  const acting =
+    g.original[id] === call ||
+    (isDoppel && g.doppelCopy === call && (call === 'werewolf' || call === 'mason'));
+  if (!acting) return suspect;
+  if (call === 'werewolf') {
+    if (actingAs(g, 'werewolf').length === 1 && g.loneWolf) {
+      return {
+        ...base,
+        purpose: 'on-werewolf',
+        options: [],
+        count: 0,
+        centerCount: 1,
+        note: 'lone',
+      };
+    }
+    return { ...suspect, note: 'pack' };
+  }
+  return actionPrompt(call, base, suspect);
+}
+
+type PickPrompt = Extract<Prompt, { kind: 'pick' }>;
+type PickBase = Omit<PickPrompt, 'purpose'>;
+
+/** The prompt for a role's own night action (also used by a Doppelgänger that copied it). */
+function actionPrompt(role: string, base: PickBase, suspect: PickPrompt): Prompt {
+  switch (role) {
     case 'seer':
       return { ...base, purpose: 'on-seer', centerCount: 2 };
     case 'robber':
@@ -452,7 +530,8 @@ function promptFor(g: OneNightGame, id: string): Prompt {
     case 'drunk':
       return { ...base, purpose: 'on-drunk', options: [], count: 0, centerCount: 1 };
     default:
-      return { ...suspect, note: call };
+      // Information-only roles (Minion, Mason, Insomniac): keep tapping like everyone else.
+      return { ...suspect, note: role };
   }
 }
 
@@ -499,6 +578,18 @@ export function oneNightView(g: OneNightGame, viewer: string | null, now: number
 }
 
 // ---------------------------------------------------------------------------
+
+/** Players who wake up as `role`: its dealt holders plus a Doppelgänger that copied it. */
+function actingAs(g: OneNightGame, role: OneNightRoleId): string[] {
+  return g.seats.filter(
+    (id) => g.original[id] === role || (g.original[id] === 'doppelganger' && g.doppelCopy === role),
+  );
+}
+
+/** The role a card stands for at the end of the night. */
+function effective(g: OneNightGame, card: OneNightRoleId): OneNightRoleId {
+  return card === 'doppelganger' && g.doppelCopy ? g.doppelCopy : card;
+}
 
 function holdersOf(g: OneNightGame, role: OneNightRoleId, which: 'original' | 'cards'): string[] {
   return g.seats.filter((id) => g[which][id] === role);

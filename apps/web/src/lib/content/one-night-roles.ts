@@ -4,6 +4,7 @@ import type { RoleText } from './roles.ts';
 
 /** One Night role texts, in the project's own words. Rules: docs/rules/one-night.md. */
 export const ONE_NIGHT_ICON: Record<OneNightRoleId, string> = {
+  doppelganger: '🎭',
   villager: '🧑‍🌾',
   werewolf: '🐺',
   minion: '🦹',
@@ -19,6 +20,11 @@ export const ONE_NIGHT_ICON: Record<OneNightRoleId, string> = {
 
 export const ONE_NIGHT_TEXT: Record<Lang, Record<OneNightRoleId, RoleText>> = {
   vi: {
+    doppelganger: {
+      name: 'Kẻ sao chép',
+      description:
+        'Thức dậy đầu tiên, xem lá của một người và trở thành vai đó (cùng phe). Nếu vai đó có hành động, làm ngay.',
+    },
     villager: {
       name: 'Dân làng',
       description: 'Không có khả năng gì, nhưng chắc chắn không phải Sói.',
@@ -55,6 +61,11 @@ export const ONE_NIGHT_TEXT: Record<Lang, Record<OneNightRoleId, RoleText>> = {
     tanner: { name: 'Thợ thuộc da', description: 'Bạn chỉ thắng nếu bị loại.' },
   },
   en: {
+    doppelganger: {
+      name: 'Doppelgänger',
+      description:
+        'Wakes first, looks at another player’s card and becomes that role (and team). If it has an action, do it now.',
+    },
     villager: { name: 'Villager', description: 'No power, but definitely not a werewolf.' },
     werewolf: {
       name: 'Werewolf',

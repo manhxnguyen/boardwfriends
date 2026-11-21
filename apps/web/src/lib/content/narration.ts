@@ -57,6 +57,14 @@ const CLASSIC_CALLS: Record<Lang, Record<string, CallLines>> = {
 
 const ONE_NIGHT_CALLS: Record<Lang, Record<string, CallLines>> = {
   vi: {
+    doppelganger: {
+      open: 'Kẻ sao chép, hãy xem lá của một người và trở thành vai đó. Nếu vai mới có hành động, hãy làm ngay.',
+      close: 'Kẻ sao chép, xong.',
+    },
+    'doppel-insomniac': {
+      open: 'Kẻ sao chép, nếu bạn đã chép Kẻ mất ngủ, hãy xem lại lá của mình.',
+      close: 'Kẻ sao chép, xong.',
+    },
     werewolf: {
       open: 'Sói, hãy tìm đồng bọn. Nếu chỉ có một mình, hãy xem một lá ở giữa.',
       close: 'Sói, xong.',
@@ -79,6 +87,14 @@ const ONE_NIGHT_CALLS: Record<Lang, Record<string, CallLines>> = {
     insomniac: { open: 'Kẻ mất ngủ, hãy xem lại lá của mình.', close: 'Kẻ mất ngủ, xong.' },
   },
   en: {
+    doppelganger: {
+      open: 'Doppelgänger, look at another player’s card and become that role. If it has an action, do it now.',
+      close: 'Doppelgänger, done.',
+    },
+    'doppel-insomniac': {
+      open: 'Doppelgänger, if you copied the Insomniac, look at your card again.',
+      close: 'Doppelgänger, done.',
+    },
     werewolf: {
       open: 'Werewolves, find each other. If you are alone, look at one center card.',
       close: 'Werewolves, done.',
@@ -245,8 +261,12 @@ export function cueText(cue: Cue, lang: Lang, names: Names, oneNight: boolean): 
 
 /** Display name of a night call for headings. */
 export function callTitle(call: string, lang: Lang, oneNight: boolean): string {
-  if (oneNight)
+  if (oneNight) {
+    if (call === 'doppel-insomniac') {
+      return `${ONE_NIGHT_TEXT[lang].doppelganger.name} (${ONE_NIGHT_TEXT[lang].insomniac.name})`;
+    }
     return ONE_NIGHT_TEXT[lang][call as keyof (typeof ONE_NIGHT_TEXT)['vi']]?.name ?? call;
+  }
   if (call === 'wolves') return lang === 'vi' ? 'Bầy Sói' : 'Wolves';
   return (CLASSIC_ROLE_IDS as readonly string[]).includes(call)
     ? ROLE_TEXT[lang][call as ClassicRoleId].name

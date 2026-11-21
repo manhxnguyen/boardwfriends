@@ -313,6 +313,153 @@ describe('vote and winners (ON-VOTE, ON-WIN)', () => {
   });
 });
 
+describe('Doppelgänger [OR p.2–3]', () => {
+  const view = (sim: Sim, id: string) => oneNightView(sim.game, id, sim.now).you!;
+
+  it('wakes first, and gets an extra call after the Insomniac when both are in the deck', () => {
+    const deck: OneNightRoleId[] = [
+      'doppelganger',
+      'werewolf',
+      'insomniac',
+      'robber',
+      'villager',
+      'seer',
+    ];
+    expect(started(deck, 3).game.calls).toEqual([
+      'doppelganger',
+      'werewolf',
+      'seer',
+      'robber',
+      'insomniac',
+      'doppel-insomniac',
+    ]);
+  });
+
+  it('copying a Werewolf: joins the pack, so the real wolf is no longer alone', () => {
+    const deck: OneNightRoleId[] = [
+      'doppelganger',
+      'werewolf',
+      'villager',
+      'seer',
+      'villager',
+      'drunk',
+    ];
+    const sim = started(deck, 3).untilCall('doppelganger');
+    expect(view(sim, 'p1').prompt).toMatchObject({ purpose: 'on-doppel', count: 1 });
+    sim.act('p1', ['p2']);
+    expect(sim.game.knowledge.p1).toEqual([{ k: 'on-doppel', target: 'p2', role: 'werewolf' }]);
+    sim.untilCall('werewolf');
+    expect(sim.game.knowledge.p2).toEqual([{ k: 'wolves', ids: ['p1', 'p2'] }]);
+    expect(view(sim, 'p2').prompt).toMatchObject({ purpose: 'suspect', note: 'pack' });
+  });
+
+  it('copying the Seer: acts at once, in its own call', () => {
+    const deck: OneNightRoleId[] = [
+      'doppelganger',
+      'seer',
+      'werewolf',
+      'villager',
+      'villager',
+      'drunk',
+    ];
+    const sim = started(deck, 3).untilCall('doppelganger').act('p1', ['p2']);
+    expect(view(sim, 'p1').prompt).toMatchObject({ purpose: 'on-seer' });
+    sim.act('p1', ['p3']);
+    expect(sim.game.knowledge.p1).toContainEqual({
+      k: 'on-player',
+      target: 'p3',
+      role: 'werewolf',
+    });
+    sim.untilCall('seer');
+    // It does not wake again when the Seer is called.
+    expect(view(sim, 'p1').prompt).toMatchObject({ purpose: 'suspect' });
+  });
+
+  it('copying the Robber: robs at once; the robbed player becomes the copied Robber', () => {
+    const deck: OneNightRoleId[] = [
+      'doppelganger',
+      'werewolf',
+      'robber',
+      'villager',
+      'villager',
+      'seer',
+      'drunk',
+    ];
+    const sim = started(deck, 4).untilCall('doppelganger').act('p1', ['p3']).act('p1', ['p2']);
+    expect(sim.game.cards.p1).toBe('werewolf');
+    expect(sim.game.cards.p2).toBe('doppelganger');
+    // Voting out p1 (now holding the Werewolf) is a village win; p2 holds the Doppelgänger
+    // card, which counts as the Robber → village team.
+    sim.vote({ p1: 'p2', p2: 'p1', p3: 'p1', p4: 'p1' });
+    expect(sim.winners()).toEqual(['village']);
+    expect(sim.game.result?.doppelCopy).toBe('robber');
+    expect(sim.game.result?.winningPlayers.sort()).toEqual(['p2', 'p3', 'p4']);
+  });
+
+  it('whoever ends up with the Doppelgänger card is the copied role', () => {
+    // Doppelgänger copies the Werewolf; the Troublemaker gives that card to p4 (a Villager).
+    const deck: OneNightRoleId[] = [
+      'doppelganger',
+      'werewolf',
+      'troublemaker',
+      'villager',
+      'seer',
+      'villager',
+      'drunk',
+    ];
+    const sim = started(deck, 4).untilCall('doppelganger').act('p1', ['p2']);
+    sim.untilCall('troublemaker').act('p3', ['p1', 'p4']);
+    expect(sim.game.cards.p4).toBe('doppelganger');
+    sim.vote({ p1: 'p4', p2: 'p4', p3: 'p4', p4: 'p1' });
+    expect(sim.winners()).toEqual(['village']); // a "werewolf" (p4) died
+  });
+
+  it('copying the Minion: learns the werewolves at the end of its call', () => {
+    const deck: OneNightRoleId[] = [
+      'doppelganger',
+      'minion',
+      'werewolf',
+      'villager',
+      'seer',
+      'drunk',
+    ];
+    const sim = started(deck, 3).untilCall('doppelganger').act('p1', ['p2']);
+    expect(sim.game.knowledge.p1).toContainEqual({ k: 'on-minion', ids: ['p3'] });
+  });
+
+  it('copying the Insomniac: checks its card in call #9a', () => {
+    const deck: OneNightRoleId[] = [
+      'doppelganger',
+      'insomniac',
+      'robber',
+      'werewolf',
+      'seer',
+      'villager',
+      'drunk',
+    ];
+    const sim = started(deck, 4).untilCall('doppelganger').act('p1', ['p2']);
+    sim.untilCall('robber').act('p3', ['p1']); // the Robber takes the Doppelgänger card
+    sim.untilCall('doppel-insomniac');
+    expect(sim.game.knowledge.p1).toContainEqual({ k: 'on-self', role: 'robber' });
+  });
+
+  it('a Doppelgänger-Drunk that runs out of time is swapped by the app', () => {
+    const deck: OneNightRoleId[] = [
+      'doppelganger',
+      'drunk',
+      'werewolf',
+      'villager',
+      'seer',
+      'villager',
+    ];
+    const sim = started(deck, 3).untilCall('doppelganger').act('p1', ['p2']);
+    expect(view(sim, 'p1').prompt).toMatchObject({ purpose: 'on-drunk' });
+    sim.next(); // call ends, random() = 0 → center 0
+    expect(sim.game.cards.p1).toBe('villager');
+    expect(sim.game.center[0]).toBe('doppelganger');
+  });
+});
+
 describe('secrecy', () => {
   it('players see only what they learned; the full deal is published at the end', () => {
     const sim = started().untilCall('seer').act('p2', ['p1']);

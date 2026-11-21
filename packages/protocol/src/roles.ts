@@ -23,11 +23,9 @@ export const CLASSIC_ROLE_IDS = [
 ] as const;
 export type ClassicRoleId = (typeof CLASSIC_ROLE_IDS)[number];
 
-/**
- * One Night mode (One Night Ultimate Werewolf base set; docs/rules/one-night.md).
- * Doppelgänger is left out for now (its rules interact with every other role).
- */
+/** One Night mode (One Night Ultimate Werewolf base set; docs/rules/one-night.md). */
 export const ONE_NIGHT_ROLE_IDS = [
+  'doppelganger',
   'villager',
   'werewolf',
   'minion',

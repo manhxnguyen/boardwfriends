@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 
 const BASE = (process.argv[2] ?? 'http://localhost:5173').replace(/\/$/, '');
 const WS_BASE = BASE.replace(/^http/, 'ws');
-const PROTOCOL_VERSION = 3;
+const PROTOCOL_VERSION = 4;
 const SETUP = {
   t: 'setup',
   game: 'classic',

@@ -20,6 +20,8 @@ export interface OneNightRoleDef {
 }
 
 const ROLES: readonly OneNightRoleDef[] = [
+  // Team depends on the copied role; untouched it counts as village [OW].
+  { id: 'doppelganger', team: 'village', order: 1, mandatory: false, max: 1 },
   { id: 'werewolf', team: 'wolf', order: 2, mandatory: true, max: 2 },
   { id: 'minion', team: 'wolf', order: 3, mandatory: false, max: 1 },
   { id: 'mason', team: 'village', order: 4, mandatory: true, max: 2 },

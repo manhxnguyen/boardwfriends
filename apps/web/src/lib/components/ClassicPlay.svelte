@@ -63,6 +63,7 @@
     sorceress: 'sorceressTitle',
     spellcaster: 'spellcasterTitle',
     hunter: 'hunterTitle',
+    'on-doppel': 'doppelTitle',
     'on-werewolf': 'loneWolfTitle',
     'on-seer': 'seerChoose',
     'on-robber': 'robberTitle',
@@ -187,14 +188,17 @@
             {/each}
           </ul>
         {/if}
-        <PlayerPicker
-          options={prompt.options}
-          count={prompt.count}
-          selected={prompt.selected}
-          locked={prompt.locked}
-          {names}
-          onSubmit={(players) => act(players)}
-        />
+        <!-- New question → fresh picker (no stale local selection). -->
+        {#key prompt.purpose}
+          <PlayerPicker
+            options={prompt.options}
+            count={prompt.count}
+            selected={prompt.selected}
+            locked={prompt.locked}
+            {names}
+            onSubmit={(players) => act(players)}
+          />
+        {/key}
         {#if prompt.purpose === 'hunter'}
           <button
             type="button"

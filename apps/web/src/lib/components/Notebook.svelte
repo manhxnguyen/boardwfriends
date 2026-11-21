@@ -36,6 +36,8 @@
         return t('kRobbed', { name: names(k.target), role: on(k.role) });
       case 'on-self':
         return t('kSelf', { role: on(k.role) });
+      case 'on-doppel':
+        return t('kDoppel', { name: names(k.target), role: on(k.role) });
     }
   }
 </script>

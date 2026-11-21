@@ -108,7 +108,9 @@ export type Knowledge =
   | { k: 'on-center'; index: number; role: OneNightRoleId }
   | { k: 'on-player'; target: string; role: OneNightRoleId }
   | { k: 'on-robbed'; target: string; role: OneNightRoleId }
-  | { k: 'on-self'; role: OneNightRoleId };
+  | { k: 'on-self'; role: OneNightRoleId }
+  /** The Doppelgänger looked at `target` and became `role`. */
+  | { k: 'on-doppel'; target: string; role: OneNightRoleId };
 
 /** What a phone should show right now. Night prompts look alike for everyone (anti-tell). */
 export type Prompt =
@@ -122,6 +124,7 @@ export type Prompt =
         | 'sorceress'
         | 'spellcaster'
         | 'hunter'
+        | 'on-doppel'
         | 'on-werewolf'
         | 'on-seer'
         | 'on-robber'
@@ -232,6 +235,8 @@ export interface OneNightResult {
   original: Record<string, OneNightRoleId>;
   final: Record<string, OneNightRoleId>;
   center: OneNightRoleId[];
+  /** Role the Doppelgänger copied; whoever holds the Doppelgänger card at the end is that role. */
+  doppelCopy: OneNightRoleId | null;
   votes: Record<string, string>;
   deaths: string[];
   /** Players on the winning side(s). */

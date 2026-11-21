@@ -292,7 +292,9 @@
           {@const result = play.result}
           <ul class="mt-8 grid grid-cols-4 gap-3 xl:grid-cols-5">
             {#each play.seats as seat (seat.id)}
-              {@const role = result.final[seat.id]!}
+              {@const card = result.final[seat.id]!}
+              {@const role =
+                card === 'doppelganger' && result.doppelCopy ? result.doppelCopy : card}
               <li
                 class="rounded-2xl px-4 py-3 {result.deaths.includes(seat.id)
                   ? 'bg-wolf/40'

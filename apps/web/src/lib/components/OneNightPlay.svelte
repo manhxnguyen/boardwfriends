@@ -46,6 +46,7 @@
 
   const pickTitle: Partial<Record<Extract<Prompt, { kind: 'pick' }>['purpose'], MessageKey>> = {
     suspect: 'suspectTitle',
+    'on-doppel': 'doppelTitle',
     'on-werewolf': 'loneWolfTitle',
     'on-seer': 'seerChoose',
     'on-robber': 'robberTitle',
@@ -114,17 +115,20 @@
         {#if prompt.purpose === 'suspect'}
           <p class="mb-2 text-xs text-slate-400">{t('suspectHint')}</p>
         {/if}
-        <PlayerPicker
-          options={prompt.options}
-          count={prompt.purpose === 'on-seer' ? 1 : prompt.count}
-          centerCount={prompt.centerCount}
-          centerAlternative={prompt.purpose === 'on-seer'}
-          selected={prompt.selected}
-          selectedCenter={prompt.selectedCenter}
-          locked={prompt.locked}
-          {names}
-          onSubmit={(players, center) => conn.send({ t: 'act', players, center })}
-        />
+        <!-- New question → fresh picker (no stale local selection). -->
+        {#key prompt.purpose}
+          <PlayerPicker
+            options={prompt.options}
+            count={prompt.purpose === 'on-seer' ? 1 : prompt.count}
+            centerCount={prompt.centerCount}
+            centerAlternative={prompt.purpose === 'on-seer'}
+            selected={prompt.selected}
+            selectedCenter={prompt.selectedCenter}
+            locked={prompt.locked}
+            {names}
+            onSubmit={(players, center) => conn.send({ t: 'act', players, center })}
+          />
+        {/key}
       {:else if you.prompt.kind === 'accuse'}
         {@const prompt = you.prompt}
         <h2 class="mb-2 text-lg font-bold">{t('accuseTitle')}</h2>
@@ -176,7 +180,12 @@
               {won ? '🏆 ' : ''}{names(seat.id)}
             </td>
             <td class="px-2 text-slate-400">{roleName(result.original[seat.id]!)}</td>
-            <td class="px-2">{roleName(result.final[seat.id]!)}</td>
+            <td class="px-2">
+              {roleName(result.final[seat.id]!)}{result.final[seat.id] === 'doppelganger' &&
+              result.doppelCopy
+                ? ` → ${roleName(result.doppelCopy)}`
+                : ''}
+            </td>
             <td class="px-2 font-mono">{tally[seat.id] ?? 0}</td>
           </tr>
         {/each}
