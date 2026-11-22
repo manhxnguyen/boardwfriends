@@ -16,6 +16,9 @@ export const playVi = {
   revealNone: 'Không',
   dayMinutes: 'Thời gian mỗi ngày',
   minutesShort: '{n} phút',
+  firstNightKillLabel: 'Sói cắn từ đêm đầu',
+  firstNightKillHint:
+    'Bật: đêm đầu Sói chọn nạn nhân, Bảo vệ và Phù thuỷ có tác dụng như mọi đêm. Tắt: đúng luật gốc, đêm đầu Sói chỉ nhận mặt nhau.',
   voiceLabel: 'MacBook nghe lệnh giọng nói (thử nghiệm)',
   voiceHint:
     'Màn hình dẫn truyện nghe các câu như “tôi đề cử Bình”, “ủng hộ”, “bỏ phiếu”, “tạm dừng”.',
@@ -205,6 +208,9 @@ export const playEn: Record<PlayKey, string> = {
   revealNone: 'Nothing',
   dayMinutes: 'Time per day',
   minutesShort: '{n} min',
+  firstNightKillLabel: 'Wolves hunt from the first night',
+  firstNightKillHint:
+    'On: on night 1 the wolves choose a victim and the Bodyguard and Witch work as on any night. Off: official rule, night 1 the wolves only meet.',
   voiceLabel: 'MacBook listens for voice commands (experimental)',
   voiceHint: 'The narrator screen listens for “I nominate Binh”, “second”, “vote”, “pause”.',
   narrator: 'Narrator screen',

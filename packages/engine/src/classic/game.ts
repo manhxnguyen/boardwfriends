@@ -109,6 +109,11 @@ export interface ClassicGame {
   alive: Record<string, boolean>;
   seen: string[];
   reveal: RevealMode;
+  /**
+   * Variant: wolves already eliminate on night 1 (and the Bodyguard/Witch work that night).
+   * Off = official rule, night 1 is quiet [GS p.2]. See docs/rules/classic.md AD-AUTO-12.
+   */
+  firstNightKill: boolean;
   timings: ClassicTimings;
   night: number;
   day: number;
@@ -162,6 +167,7 @@ export function startClassic(input: {
   deck: RoleCounts;
   reveal: RevealMode;
   dayMinutes: number;
+  firstNightKill?: boolean;
   timings?: Partial<ClassicTimings>;
 }): ClassicGame {
   const dayMs = input.dayMinutes * 60_000;
@@ -172,6 +178,7 @@ export function startClassic(input: {
     alive: Object.fromEntries(input.seats.map((id) => [id, true])),
     seen: [],
     reveal: input.reveal,
+    firstNightKill: input.firstNightKill ?? false,
     timings: { ...DEFAULT_TIMINGS, firstDayMs: dayMs, dayMs, ...input.timings },
     night: 0,
     day: 0,
@@ -336,7 +343,9 @@ function startNight(g: ClassicGame, at: number) {
   g.memory.silenced = null;
   g.memory.cubDouble = g.memory.cubDiedPending;
   g.memory.cubDiedPending = false;
-  g.calls = nightScript(g.deck, g.night === 1 ? 'first' : 'later').map((s) => s.call);
+  g.calls = nightScript(g.deck, g.night === 1 ? 'first' : 'later', g.firstNightKill).map(
+    (s) => s.call,
+  );
   g.acts = emptyActs();
   cue(g, { k: 'night', n: g.night });
   openStep(g, 0, at);
@@ -362,7 +371,7 @@ function openStep(g: ClassicGame, step: number, at: number) {
     const masons = aliveWith(g, 'mason');
     for (const id of masons) learn(g, id, { k: 'masons', ids: masons });
   }
-  if (call === 'witch' && g.night > 1 && !g.memory.witchUsed) {
+  if (call === 'witch' && !quietNight(g) && !g.memory.witchUsed) {
     for (const id of aliveWith(g, 'witch')) {
       learn(g, id, { k: 'witch', night: g.night, targets: [...g.acts.wolfVictims] });
     }
@@ -375,7 +384,7 @@ function openStep(g: ClassicGame, step: number, at: number) {
 }
 
 function stepNote(g: ClassicGame, call: NightCall): string | null {
-  if (g.night === 1) {
+  if (quietNight(g)) {
     if (call === 'wolves') return 'meet-only'; // [GS p.2]
     if (call === 'bodyguard' || call === 'witch') return 'no-effect'; // UW-N1-05
     return null;
@@ -394,7 +403,7 @@ function closeStep(g: ClassicGame) {
 
 /** All living wolves must pick the same target(s) [GS p.3, RR p.3]; otherwise nobody dies. */
 function wolfConsensus(g: ClassicGame): string[] {
-  if (g.night === 1) return [];
+  if (quietNight(g)) return [];
   const pack = alivePack(g);
   if (pack.length === 0) return [];
   const needed = wolfTargetCount(g);
@@ -416,7 +425,7 @@ function resolveNight(g: ClassicGame, at: number) {
   const { acts, memory } = g;
   const killed: { id: string; cause: DeathCause }[] = [];
 
-  if (g.night > 1) {
+  if (!quietNight(g)) {
     const protectedId = acts.bodyguard; // UW-R-BG-01
     const saved = acts.witch?.action === 'save' ? acts.witch.target : null;
     for (const victim of acts.wolfVictims) {
@@ -516,7 +525,7 @@ function act(
 
   switch (prompt.purpose) {
     case 'bodyguard':
-      if (g.night === 1) g.acts.dummy[playerId] = target;
+      if (quietNight(g)) g.acts.dummy[playerId] = target;
       else g.acts.bodyguard = target;
       break;
     case 'seer':
@@ -749,7 +758,7 @@ function promptFor(g: ClassicGame, id: string): Prompt {
 
   if (call === 'wolves' && isWolf) {
     const pack = alivePack(g).map((w) => ({ id: w, picks: acts.wolves[w] ?? [] }));
-    if (g.night === 1) {
+    if (quietNight(g)) {
       // Wolves only meet on night 1, but still get something to tap so they look as busy as
       // everyone else [AD, anti-tell]. Their tap counts as a suspicion for the stats.
       return { ...suspect('meet-only'), pack };
@@ -764,13 +773,14 @@ function promptFor(g: ClassicGame, id: string): Prompt {
 
   switch (call) {
     case 'bodyguard': {
-      const options = others(g, id).filter((o) => g.night === 1 || o !== g.memory.lastProtected);
-      const chosen = g.night === 1 ? acts.dummy[id] : acts.bodyguard;
+      const quiet = quietNight(g);
+      const options = others(g, id).filter((o) => quiet || o !== g.memory.lastProtected);
+      const chosen = quiet ? acts.dummy[id] : acts.bodyguard;
       const selected = chosen ? [chosen] : [];
-      return pick(g, 'bodyguard', options, 1, selected, g.night === 1 ? 'no-effect' : null);
+      return pick(g, 'bodyguard', options, 1, selected, quiet ? 'no-effect' : null);
     }
     case 'witch':
-      if (g.night === 1) return suspect('no-effect');
+      if (quietNight(g)) return suspect('no-effect');
       if (g.memory.witchUsed) return suspect('used');
       return {
         kind: 'witch',
@@ -921,6 +931,11 @@ function hideCueCause(entry: CueEntry): CueEntry {
 
 // ---------------------------------------------------------------------------
 // Helpers
+
+/** Night 1 under the official rule: wolves only meet, protections have no effect. */
+function quietNight(g: ClassicGame): boolean {
+  return g.night === 1 && !g.firstNightKill;
+}
 
 function emptyActs(): NightActs {
   return {

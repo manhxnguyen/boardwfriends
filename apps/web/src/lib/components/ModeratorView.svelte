@@ -13,12 +13,14 @@
     lobby,
     roles,
     assignments,
+    firstNightKill = false,
   }: {
     code: string;
     round: number;
     lobby: LobbyView;
     roles: RoleCounts;
     assignments: Assignment[];
+    firstNightKill?: boolean;
   } = $props();
 
   type Tab = 'table' | 'first' | 'later' | 'day';
@@ -43,7 +45,7 @@
 
   const nameOf = (id: string) => lobby.players.find((p) => p.id === id)?.name ?? '?';
   const script = $derived(SCRIPT[i18n.lang]);
-  const firstNight = $derived(nightScript(roles, 'first'));
+  const firstNight = $derived(nightScript(roles, 'first', firstNightKill));
   const laterNights = $derived(nightScript(roles, 'later'));
 
   const tabs: { id: Tab; label: () => string }[] = [
@@ -79,7 +81,7 @@
       </li>
     {/each}
     <li class="rounded-xl bg-night-900 p-4 text-lg">
-      ☀️ {first ? script.wakeFirst : script.wakeLater}
+      ☀️ {first && !firstNightKill ? script.wakeFirst : script.wakeLater}
     </li>
   </ol>
 {/snippet}

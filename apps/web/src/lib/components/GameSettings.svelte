@@ -94,6 +94,21 @@
     {/if}
   {/if}
 
+  {#if setup.game === 'classic'}
+    <label class="flex items-start justify-between gap-3">
+      <span>
+        <span class="block text-sm font-semibold">{t('firstNightKillLabel')}</span>
+        <span class="block text-xs text-slate-400">{t('firstNightKillHint')}</span>
+      </span>
+      <input
+        type="checkbox"
+        class="mt-1 size-6 shrink-0 accent-moon"
+        checked={setup.firstNightKill}
+        onchange={(e) => set({ firstNightKill: e.currentTarget.checked })}
+      />
+    </label>
+  {/if}
+
   {#if setup.game === 'one-night' || setup.mode === 'auto'}
     <label class="block">
       <span class="flex justify-between text-sm font-semibold text-slate-300">

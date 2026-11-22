@@ -31,13 +31,18 @@ class Sim {
   game: ClassicGame;
   now = 0;
 
-  constructor(roles: ClassicRoleId[], reveal: 'role' | 'team' | 'none' = 'role') {
+  constructor(
+    roles: ClassicRoleId[],
+    reveal: 'role' | 'team' | 'none' = 'role',
+    firstNightKill = false,
+  ) {
     const seats = roles.map((_, i) => `p${i + 1}`);
     this.game = startClassic({
       seats,
       roles: Object.fromEntries(seats.map((id, i) => [id, roles[i]!])),
       deck: roles.reduce<Record<string, number>>((d, r) => ({ ...d, [r]: (d[r] ?? 0) + 1 }), {}),
       reveal,
+      firstNightKill,
       dayMinutes: 1,
       timings: FAST,
     });
@@ -198,6 +203,55 @@ describe('first night (UW-N1)', () => {
     sim.untilNight(2).untilCall('bodyguard');
     // Night 1's pick does not count against protecting the same player on night 2.
     expect((sim.prompt('p4') as { options: string[] }).options).toContain('p7');
+  });
+});
+
+describe('variant: wolves hunt from the first night (AD-AUTO-12)', () => {
+  const hunting = () => new Sim(BASIC, 'role', true).do({ type: 'start' });
+
+  it('wolves choose and kill on night 1, after meeting each other', () => {
+    const sim = hunting().untilCall('wolves', 1);
+    expect(sim.game.knowledge.p1).toEqual([{ k: 'wolves', ids: ['p1', 'p2'] }]);
+    expect(sim.prompt('p1')).toMatchObject({
+      kind: 'pick',
+      purpose: 'wolves',
+      count: 1,
+      note: null,
+    });
+    sim
+      .act('p1', ['p7'])
+      .act('p2', ['p7'])
+      .until((g) => g.phase.kind === 'dawn');
+    expect(sim.game.alive.p7).toBe(false);
+    expect(sim.game.phase).toMatchObject({ deaths: [{ playerId: 'p7', role: 'villager' }] });
+    sim.next();
+    expect(sim.game.phase).toMatchObject({ kind: 'day' });
+    expect(sim.game.day).toBe(1);
+  });
+
+  it('the Bodyguard protects for real on night 1', () => {
+    const sim = hunting();
+    expect(sim.prompt('p4')).toMatchObject({ purpose: 'bodyguard', note: null });
+    sim.act('p4', ['p7']).untilCall('wolves', 1).act('p1', ['p7']).act('p2', ['p7']);
+    sim.until((g) => g.phase.kind === 'dawn');
+    expect(sim.game.alive.p7).toBe(true);
+    expect(sim.game.memory.lastProtected).toBe('p7');
+  });
+
+  it('the Witch learns the night-1 target and can save them', () => {
+    const sim = hunting()
+      .untilCall('wolves', 1)
+      .act('p1', ['p8'])
+      .act('p2', ['p8'])
+      .untilCall('witch', 1);
+    expect(sim.prompt('p5')).toMatchObject({ kind: 'witch', targets: ['p8'] });
+    sim.act('p5', ['p8'], 'save').until((g) => g.phase.kind === 'dawn');
+    expect(sim.game.alive.p8).toBe(true);
+    expect(sim.game.memory.witchUsed).toBe(true);
+  });
+
+  it('is off by default in the engine (official rule)', () => {
+    expect(new Sim(BASIC).game.firstNightKill).toBe(false);
   });
 });
 

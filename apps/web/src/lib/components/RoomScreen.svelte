@@ -232,6 +232,7 @@
         lobby={room.lobby}
         roles={game.setup?.roles ?? {}}
         assignments={game.assignments}
+        firstNightKill={game.setup?.firstNightKill === true}
       />
     {:else}
       <!-- ───────────── Manual: player ───────────── -->

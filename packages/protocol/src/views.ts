@@ -40,6 +40,8 @@ export interface SetupView {
   /** Whether everyone may see which roles are in the deck. */
   publicRoles: boolean;
   reveal: RevealMode;
+  /** Classic variant: wolves already eliminate on night 1 (official rule: night 1 is quiet). */
+  firstNightKill: boolean;
   dayMinutes: number;
   /** Let the narrator display accept spoken commands (experimental). */
   voice: boolean;

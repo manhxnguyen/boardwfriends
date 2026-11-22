@@ -32,17 +32,28 @@ const ORDER: readonly { call: NightCall; roles: readonly ClassicRoleId[] }[] = [
   { call: 'insomniac', roles: ['insomniac'] },
 ];
 
-export function nightScript(roles: RoleCounts, night: 'first' | 'later'): ScriptStep[] {
+/** `firstNightKill`: room variant where wolves already eliminate on night 1 (AD-AUTO-12). */
+export function nightScript(
+  roles: RoleCounts,
+  night: 'first' | 'later',
+  firstNightKill = false,
+): ScriptStep[] {
   const steps: ScriptStep[] = [];
   for (const { call, roles: members } of ORDER) {
     if (!members.some((id) => (roles[id] ?? 0) > 0)) continue;
     if (call === 'mason' && night === 'later') continue; // Masons only meet once.
-    steps.push({ call, note: noteFor(call, night, roles) });
+    steps.push({ call, note: noteFor(call, night, roles, firstNightKill) });
   }
   return steps;
 }
 
-function noteFor(call: NightCall, night: 'first' | 'later', roles: RoleCounts): ScriptStep['note'] {
+function noteFor(
+  call: NightCall,
+  night: 'first' | 'later',
+  roles: RoleCounts,
+  firstNightKill: boolean,
+): ScriptStep['note'] {
+  if (night === 'first' && firstNightKill) return null; // a normal night (wolves also meet)
   if (night === 'first') {
     if (call === 'wolves') return 'meet-only'; // [GS p.2] wolves only look for each other.
     if (call === 'bodyguard' || call === 'witch') return 'no-effect'; // UW-N1-05

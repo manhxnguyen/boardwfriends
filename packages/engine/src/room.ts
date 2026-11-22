@@ -319,6 +319,8 @@ function deal(state: RoomState, by: string, ctx: RoomContext): RoomResult {
     deck: setup.roles,
     reveal: setup.reveal,
     dayMinutes: setup.dayMinutes,
+    // Rooms saved before this option existed keep the official quiet first night.
+    firstNightKill: setup.firstNightKill === true,
   });
   return playing({ kind: 'classic', game });
 }

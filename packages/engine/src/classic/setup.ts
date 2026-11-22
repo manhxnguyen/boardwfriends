@@ -20,6 +20,8 @@ export const EMPTY_SETUP: Setup = {
   moderatorId: null,
   publicRoles: true,
   reveal: 'role',
+  // The group's house rule (decided 2026-11-21): wolves already hunt on night 1.
+  firstNightKill: true,
   dayMinutes: 5,
   voice: false,
 };

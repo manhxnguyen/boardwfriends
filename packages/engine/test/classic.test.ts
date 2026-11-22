@@ -191,6 +191,11 @@ describe('night script', () => {
     ]);
   });
 
+  it('with the first-night-kill variant, night 1 is a normal night (plus Masons meeting)', () => {
+    expect(nightScript(full, 'first', true).every((s) => s.note === null)).toBe(true);
+    expect(nightScript(full, 'first', true).map((s) => s.call)).toContain('mason');
+  });
+
   it('reminds the moderator about the Wolf Cub double kill [RR p.4]', () => {
     expect(nightScript(full, 'later')[1]).toEqual({ call: 'wolves', note: 'wolf-cub-double' });
     expect(nightScript({ werewolf: 1, seer: 1 }, 'later')).toEqual([

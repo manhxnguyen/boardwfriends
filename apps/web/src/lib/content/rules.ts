@@ -158,6 +158,10 @@ export const RULES: Record<Lang, Record<GameKind, RuleSection[]>> = {
         lines: [
           l('Đêm đầu tiên: Sói chỉ nhận mặt nhau, không ai bị loại.', 'GS:2'),
           l(
+            'Tuỳ chọn của phòng “Sói cắn từ đêm đầu” (bật sẵn): đêm đầu Sói vẫn nhận mặt nhau nhưng được chọn nạn nhân; Bảo vệ và Phù thuỷ có tác dụng như mọi đêm.',
+            'AD',
+          ),
+          l(
             'Mỗi đêm Tiên tri soi một người và biết người đó có phải Sói hay không.',
             'GS:2',
             'GS:3',
@@ -278,6 +282,10 @@ export const RULES: Record<Lang, Record<GameKind, RuleSection[]>> = {
         title: 'Night',
         lines: [
           l('First night: the wolves only meet each other. Nobody is eliminated.', 'GS:2'),
+          l(
+            'Room option “Wolves hunt from the first night” (on by default): on night 1 the wolves still meet but also choose a victim; the Bodyguard and Witch work as on any night.',
+            'AD',
+          ),
           l(
             'Every night the Seer looks at one player and learns whether they are a werewolf.',
             'GS:2',

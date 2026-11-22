@@ -65,6 +65,7 @@ describe('game messages', () => {
         moderatorId: null,
         publicRoles: true,
         reveal: 'role',
+        firstNightKill: true,
         dayMinutes: 5,
         voice: false,
       }),
