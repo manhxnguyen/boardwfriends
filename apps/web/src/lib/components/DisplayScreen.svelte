@@ -9,7 +9,7 @@
   import { ROLE_ICON, ROLE_TEXT, TEAM_TEXT } from '../content/roles.ts';
   import { i18n, t } from '../i18n.svelte.ts';
   import { Listener } from '../listener.svelte.ts';
-  import { Narrator } from '../narrator.svelte.ts';
+  import { CLOUD_VOICE, Narrator } from '../narrator.svelte.ts';
   import { qrSvg } from '../qr.ts';
   import { parseVoiceCommand, type VoiceCommand } from '../voice-commands.ts';
   import { WakeLock } from '../wakeLock.svelte.ts';
@@ -26,7 +26,7 @@
     () => 'TV',
     'display',
   );
-  const narrator = new Narrator();
+  const narrator = new Narrator(untrack(() => code));
   const wakeLock = new WakeLock();
   const listener = new Listener(onSentence);
   onDestroy(() => {
@@ -344,33 +344,47 @@
 
   <!-- Narrator controls -->
   <footer class="mt-10 flex flex-wrap items-center gap-3 border-t border-night-800 pt-4 text-sm">
-    {#if narrator.supported && voices.length}
-      <label class="flex items-center gap-2">
-        {t('voiceName')}
-        <select
-          class="rounded-lg border border-night-600 bg-night-950 px-2 py-1"
-          value={narrator.voiceURI ?? voices[0]?.voiceURI}
-          onchange={(e) => narrator.setVoice(e.currentTarget.value)}
-        >
-          {#each voices as v (v.voiceURI)}
-            <option value={v.voiceURI}>{v.name}</option>
-          {/each}
-        </select>
-      </label>
-      <button
-        type="button"
-        class="rounded-full bg-night-800 px-3 py-1.5"
-        onclick={() => narrator.speak(t('testSentence'), i18n.lang)}
+    <label class="flex items-center gap-2">
+      {t('voiceName')}
+      <select
+        class="rounded-lg border border-night-600 bg-night-950 px-2 py-1"
+        value={narrator.usingCloud ? CLOUD_VOICE : (narrator.voiceURI ?? voices[0]?.voiceURI ?? '')}
+        onchange={(e) => narrator.setVoice(e.currentTarget.value)}
       >
-        {t('testVoice')}
-      </button>
-      <button
-        type="button"
-        class="rounded-full bg-night-800 px-3 py-1.5"
-        onclick={() => narrator.repeat(i18n.lang)}
-      >
-        🔁 {t('repeat')}
-      </button>
+        {#if narrator.cloudAvailable}
+          <option value={CLOUD_VOICE}>☁️ {t('voiceCloud')}</option>
+        {/if}
+        {#each voices as v (v.voiceURI)}
+          <option value={v.voiceURI}>{v.name}</option>
+        {/each}
+        {#if !narrator.cloudAvailable && !voices.length}
+          <option value="" disabled>{t('voiceNone')}</option>
+        {/if}
+      </select>
+    </label>
+    <button
+      type="button"
+      class="rounded-full bg-night-800 px-3 py-1.5"
+      onclick={() => narrator.speak(t('testSentence'), i18n.lang)}
+    >
+      {t('testVoice')}
+    </button>
+    <button
+      type="button"
+      class="rounded-full bg-night-800 px-3 py-1.5"
+      onclick={() => narrator.repeat(i18n.lang)}
+    >
+      🔁 {t('repeat')}
+    </button>
+    {#if narrator.cloudError}
+      <p class="w-full text-xs text-moon">⚠️ {t('voiceCloudError')}</p>
+    {/if}
+    {#if narrator.missingVoice}
+      <div class="w-full rounded-xl border border-wolf/60 bg-wolf/15 p-3 text-sm leading-relaxed">
+        <p class="font-semibold">⚠️ {t('voiceMissingTitle')}</p>
+        <p class="mt-1">{t('voiceMissingMac')}</p>
+        <p class="mt-1">{t('voiceMissingEdge')}</p>
+      </div>
     {/if}
 
     {#if voiceAllowed}

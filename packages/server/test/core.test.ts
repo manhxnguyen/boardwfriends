@@ -5,6 +5,8 @@ import {
   CLOSE,
   RoomCore,
   STALE_SOCKET_MS,
+  TTS_MAX_CHARS,
+  parseTtsRequest,
   type Conn,
   type ConnData,
   type RoomHost,
@@ -197,5 +199,25 @@ describe('RoomCore', () => {
     expect(a.last('state')?.room.lobby.players.find((p) => p.name === 'Binh')?.connected).toBe(
       false,
     );
+  });
+});
+
+describe('parseTtsRequest', () => {
+  const parse = (q: string) => parseTtsRequest(new URL(`https://x/api/tts?${q}`));
+  it('accepts a valid request', () => {
+    expect(parse('room=abcd&lang=vi&text=Xin%20ch%C3%A0o')).toEqual({
+      ok: true,
+      room: 'ABCD',
+      lang: 'vi',
+      text: 'Xin chào',
+    });
+  });
+  it.each([
+    ['room=AB&lang=vi&text=a', 'bad_room'],
+    ['room=ABCD&lang=fr&text=a', 'bad_lang'],
+    ['room=ABCD&lang=vi&text=', 'bad_text'],
+    [`room=ABCD&lang=vi&text=${'a'.repeat(TTS_MAX_CHARS + 1)}`, 'bad_text'],
+  ])('rejects %s', (q, error) => {
+    expect(parse(q)).toMatchObject({ ok: false, error });
   });
 });

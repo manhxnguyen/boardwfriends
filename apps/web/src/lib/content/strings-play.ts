@@ -167,6 +167,15 @@ export const playVi = {
   voiceHelp:
     'Nói: “tôi đề cử <tên>”, “ủng hộ”, “bỏ phiếu”, “tạm dừng”, “tiếp tục”, “kết thúc ngày”, “đọc lại”.',
   repeat: 'Đọc lại',
+  voiceCloud: 'Giọng Google (đám mây, rõ nhất)',
+  voiceNone: 'Máy này không có giọng phù hợp',
+  voiceCloudError:
+    'Không gọi được giọng Google (mất mạng hoặc hết hạn mức). Đang dùng giọng của máy.',
+  voiceMissingTitle: 'Máy này chưa có giọng đọc tiếng Việt, nên lời dẫn chỉ hiện chữ.',
+  voiceMissingMac:
+    'MacBook: Cài đặt hệ thống → Trợ năng → Nội dung được đọc → Giọng nói hệ thống → Quản lý giọng nói → Tiếng Việt → tải “Linh (Nâng cao)”, rồi tải lại trang.',
+  voiceMissingEdge:
+    'Hoặc mở màn hình này bằng trình duyệt Microsoft Edge: có sẵn giọng “HoaiMy (Natural)” tiếng Việt rất rõ.',
   rules: 'Luật chơi',
   close: 'Đóng',
   rolesTitle: 'Các vai',
@@ -338,6 +347,15 @@ export const playEn: Record<PlayKey, string> = {
   voiceHelp:
     'Say: “I nominate <name>”, “second”, “vote”, “pause”, “resume”, “end the day”, “repeat”.',
   repeat: 'Repeat',
+  voiceCloud: 'Google voice (cloud, clearest)',
+  voiceNone: 'No suitable voice on this device',
+  voiceCloudError: 'The Google voice is unavailable (offline or quota). Using this device’s voice.',
+  voiceMissingTitle:
+    'This device has no voice for this language, so narration is shown as text only.',
+  voiceMissingMac:
+    'MacBook: System Settings → Accessibility → Spoken Content → System voice → Manage Voices → pick the language and download an “Enhanced” voice, then reload.',
+  voiceMissingEdge:
+    'Or open this screen in Microsoft Edge, which includes clear “Natural” voices (e.g. Vietnamese “HoaiMy”).',
   rules: 'Rules',
   close: 'Close',
   rolesTitle: 'Roles',

@@ -22,6 +22,9 @@ import {
   randomRoomCode,
   routeApi,
   secureRandom,
+  synthesize,
+  parseTtsRequest,
+  TTS_HEADERS,
   type Conn,
   type ConnData,
   type ServerInfoResponse,
@@ -41,6 +44,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = resolve(args.static ?? join(here, '../../web/dist/client'));
 const DATA_DIR = args.data ? resolve(args.data) : null;
 const PORT = Number(args.port);
+// Optional cloud voice; needs internet. GOOGLE_TTS_API_KEY=… pnpm lan
+const TTS_KEY = process.env.GOOGLE_TTS_API_KEY;
+const ttsCache = new Map<string, ArrayBuffer>();
 
 // ---------------------------------------------------------------------------
 // Rooms
@@ -190,7 +196,37 @@ const server = createServer(async (req, res) => {
     case 'error':
       return json(res, route.status, { error: route.error });
     case 'server':
-      return json(res, 200, { lanOrigin: lanOrigin() } satisfies ServerInfoResponse);
+      return json(res, 200, {
+        lanOrigin: lanOrigin(),
+        tts: !!TTS_KEY,
+      } satisfies ServerInfoResponse);
+    case 'tts': {
+      if (!TTS_KEY) return json(res, 501, { error: 'tts_not_configured' });
+      const parsed = parseTtsRequest(url);
+      if (!parsed.ok) return json(res, parsed.status, { error: parsed.error });
+      if (!rooms.has(parsed.room)) return json(res, 404, { error: 'room_not_found' });
+      const key = `${parsed.lang}|${parsed.text}`;
+      try {
+        let audio = ttsCache.get(key);
+        if (!audio) {
+          audio = await synthesize(
+            {
+              apiKey: TTS_KEY,
+              voiceVi: process.env.GOOGLE_TTS_VOICE_VI,
+              voiceEn: process.env.GOOGLE_TTS_VOICE_EN,
+            },
+            parsed.lang,
+            parsed.text,
+          );
+          if (ttsCache.size > 500) ttsCache.clear();
+          ttsCache.set(key, audio);
+        }
+        res.writeHead(200, TTS_HEADERS);
+        return res.end(Buffer.from(audio));
+      } catch {
+        return json(res, 502, { error: 'tts_failed' });
+      }
+    }
     case 'create':
       for (let i = 0; i < CREATE_ATTEMPTS; i++) {
         const code = randomRoomCode();
@@ -252,5 +288,8 @@ server.listen(PORT, args.host, () => {
   console.log(`   Narrator (this Mac):  http://localhost:${PORT}`);
   console.log(`   Phones (same wifi):   ${lan ?? '(no network found)'}`);
   if (DATA_DIR) console.log(`   Saving rooms in:      ${DATA_DIR}`);
+  console.log(
+    `   Narration voice:      ${TTS_KEY ? 'Google Cloud TTS (needs internet)' : 'browser voice'}`,
+  );
   console.log('   Press Ctrl+C to stop.\n');
 });

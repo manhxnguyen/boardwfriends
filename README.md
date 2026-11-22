@@ -62,6 +62,17 @@ pnpm lan          # builds everything, then serves the app on port 8080
   (the microphone only works on `localhost` or HTTPS).
 - Add `--data ./rooms` (e.g. `pnpm lan:start -- --data ./rooms`) to keep rooms across restarts.
 
+### Narration voice
+
+The narrator screen reads with, in order of preference:
+
+1. **Google Cloud Text-to-Speech** (`vi-VN-Neural2-A`, the clearest Vietnamese) when the server has an
+   API key: `pnpm --filter @bwf/worker exec wrangler secret put GOOGLE_TTS_API_KEY` (Cloudflare) or
+   `GOOGLE_TTS_API_KEY=… pnpm lan:start` (LAN, needs internet). Optional `GOOGLE_TTS_VOICE_VI` /
+   `GOOGLE_TTS_VOICE_EN` pick other voices. Free tier: 1M characters/month for Neural2.
+2. A voice installed on the device for the right language (Edge "Natural" voices, macOS "Enhanced").
+3. Never a voice of another language: if none is installed, the screen explains how to add one.
+
 ### Voice commands (experimental)
 
 Enable “MacBook nghe lệnh giọng nói” in the room settings, then press 🎤 on the narrator screen.

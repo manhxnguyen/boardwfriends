@@ -3,13 +3,15 @@ import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, isRoomCode, normalizeRoomCode } f
 /**
  * Shared HTTP routing for both servers:
  *
- *   GET  /api/server             → { lanOrigin } (LAN server: address phones should use)
+ *   GET  /api/server             → { lanOrigin, tts }
+ *   GET  /api/tts?room&lang&text → MP3 from the cloud voice (if configured)
  *   POST /api/rooms              → create a room, returns { code }
  *   GET  /api/rooms/:code        → { code, players } or 404
  *   GET  /api/rooms/:code/ws     → WebSocket upgrade
  */
 export type ApiRoute =
   | { kind: 'server' }
+  | { kind: 'tts' }
   | { kind: 'create' }
   | { kind: 'info'; code: string }
   | { kind: 'socket'; code: string }
@@ -19,6 +21,7 @@ export function routeApi(method: string, pathname: string): ApiRoute | null {
   const parts = pathname.split('/').filter(Boolean);
   if (parts[0] !== 'api') return null;
   if (parts[1] === 'server' && parts.length === 2 && method === 'GET') return { kind: 'server' };
+  if (parts[1] === 'tts' && parts.length === 2 && method === 'GET') return { kind: 'tts' };
   if (parts[1] !== 'rooms') return { kind: 'error', status: 404, error: 'not_found' };
   if (parts.length === 2) {
     return method === 'POST'
@@ -43,4 +46,6 @@ export const CREATE_ATTEMPTS = 8;
 export interface ServerInfoResponse {
   /** Address other phones should open (LAN server only; null on the cloud). */
   lanOrigin: string | null;
+  /** Whether the cloud narration voice (Google TTS) is configured on this server. */
+  tts: boolean;
 }

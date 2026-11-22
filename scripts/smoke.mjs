@@ -393,4 +393,23 @@ await check('M3: One Night deals players + 3 center cards and runs the night', a
   void code;
 });
 
+await check(
+  'cloud voice endpoint answers (501 when no key is configured, else audio)',
+  async () => {
+    const info = await (await fetch(`${BASE}/api/server`)).json();
+    const { code: ttsRoom } = await (await fetch(`${BASE}/api/rooms`, { method: 'POST' })).json();
+    const res = await fetch(
+      `${BASE}/api/tts?room=${ttsRoom}&lang=vi&text=${encodeURIComponent('Xin chào')}`,
+    );
+    if (info.tts) {
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get('content-type'), 'audio/mpeg');
+    } else {
+      assert.equal(res.status, 501);
+    }
+    const bad = await fetch(`${BASE}/api/tts?room=ZZZZ&lang=xx&text=a`);
+    assert.ok(bad.status === 400 || bad.status === 501);
+  },
+);
+
 console.log('\nAll smoke checks passed.');
