@@ -195,10 +195,13 @@ const en: Dict = { ...baseEn, ...playEn };
 const dictionaries: Record<Lang, Dict> = { vi, en };
 const LANG_KEY = 'bwf.lang';
 
+/**
+ * Vietnamese by default for everyone (the group plays in Vietnamese), whatever the browser's
+ * language. Each device can switch with the VI/EN toggle; the choice is remembered per device.
+ */
 function initialLang(): Lang {
   const saved = load(LANG_KEY);
-  if (saved === 'vi' || saved === 'en') return saved;
-  return navigator.language.toLowerCase().startsWith('vi') ? 'vi' : 'en';
+  return saved === 'en' || saved === 'vi' ? saved : 'vi';
 }
 
 export const i18n = $state({ lang: initialLang() });
