@@ -550,6 +550,24 @@ describe('reveal variants and secrecy', () => {
     expect(view.you?.role).toBe('villager');
   });
 
+  it('hides whether a night death came from the wolves or the Witch until the game is over', () => {
+    const sim = toNight2().untilCall('wolves', 2).act('p1', ['p7']).act('p2', ['p7']);
+    sim.untilCall('witch', 2).act('p5', ['p8'], 'kill');
+    sim.until((g) => g.phase.kind === 'dawn');
+    for (const viewer of ['p3', 'p5', null]) {
+      const view = classicView(sim.game, viewer, sim.now);
+      const deaths = view.phase.kind === 'dawn' ? view.phase.deaths : [];
+      const cueDeaths = view.cues.flatMap((c) => (c.cue.k === 'dawn' ? c.cue.deaths : []));
+      expect(
+        deaths.map((d) => d.cause),
+        String(viewer),
+      ).toEqual(['night', 'night']);
+      expect(cueDeaths.map((d) => d.cause)).toEqual(['night', 'night']);
+    }
+    // The real causes are kept for the end-of-game stats.
+    expect(sim.game.deaths.map((d) => d.cause).sort()).toEqual(['witch', 'wolves']);
+  });
+
   it('the narrator display gets no private section', () => {
     expect(classicView(started().game, null, 0).you).toBeNull();
   });

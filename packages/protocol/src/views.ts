@@ -54,7 +54,11 @@ export interface Assignment {
 // ---------------------------------------------------------------------------
 // Narration cues: the display speaks them, phones show them as captions.
 
-export type DeathCause = 'wolves' | 'witch' | 'vote' | 'hunter';
+/**
+ * 'night' is what players see while the game runs: whether the wolves or the Witch eliminated
+ * someone is secret until the game is over (only the stats reveal 'wolves' / 'witch').
+ */
+export type DeathCause = 'wolves' | 'witch' | 'night' | 'vote' | 'hunter';
 
 export interface Death {
   playerId: string;

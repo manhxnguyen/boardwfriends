@@ -882,8 +882,8 @@ export function classicView(g: ClassicGame, viewer: string | null, now: number):
         team: showTeam ? roleDef(role).team : null,
       };
     }),
-    phase: phaseView(g),
-    cues: g.cues,
+    phase: over ? phaseView(g) : hideNightCauses(phaseView(g)),
+    cues: over ? g.cues : g.cues.map(hideCueCause),
     you:
       viewer !== null && viewer in g.roles
         ? {
@@ -899,6 +899,24 @@ export function classicView(g: ClassicGame, viewer: string | null, now: number):
       ? { roles: { ...g.roles }, deaths: g.deaths, votes: g.votes, suspected: g.suspected }
       : null,
   };
+}
+
+/** During the game nobody may learn whether a night death came from the wolves or the Witch. */
+function publicDeath(d: Death): Death {
+  return d.cause === 'wolves' || d.cause === 'witch' ? { ...d, cause: 'night' } : d;
+}
+
+function hideNightCauses(p: ClassicPhaseView): ClassicPhaseView {
+  if (p.kind === 'dawn') return { ...p, deaths: p.deaths.map(publicDeath) };
+  if (p.kind === 'dusk') return { ...p, death: publicDeath(p.death) };
+  return p;
+}
+
+function hideCueCause(entry: CueEntry): CueEntry {
+  const c = entry.cue;
+  if (c.k === 'dawn') return { ...entry, cue: { ...c, deaths: c.deaths.map(publicDeath) } };
+  if (c.k === 'eliminated') return { ...entry, cue: { ...c, death: publicDeath(c.death) } };
+  return entry;
 }
 
 // ---------------------------------------------------------------------------

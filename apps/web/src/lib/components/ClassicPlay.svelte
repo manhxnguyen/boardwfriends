@@ -89,6 +89,7 @@
 
   const causeKey: Record<string, MessageKey> = {
     wolves: 'causeWolves',
+    night: 'causeNight',
     witch: 'causeWitch',
     vote: 'causeVote',
     hunter: 'causeHunter',
