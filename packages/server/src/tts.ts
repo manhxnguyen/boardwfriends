@@ -1,5 +1,7 @@
 /**
- * Cloud narration voice (Google Cloud Text-to-Speech), shared by the Worker and the LAN server.
+ * Narration voices on the server, shared by the Worker and the LAN server:
+ * - Google Cloud Text-to-Speech (cloud, MP3), and
+ * - VieNeu-TTS (self-hosted OpenAI-compatible server on the local network, WAV), LAN server only.
  *
  * The API key stays on the server: phones/laptops request `/api/tts?room=ABCD&lang=vi&text=…`
  * and get MP3 back. Only rooms that exist may use it (so the free quota cannot be burned by
@@ -20,8 +22,11 @@ export const DEFAULT_VOICES = { vi: 'vi-VN-Neural2-A', en: 'en-US-Neural2-F' } a
 
 export type TtsLang = keyof typeof DEFAULT_VOICES;
 
+/** Voice ids sent by clients: `vieneu:<preset name>`; anything else means the Google voice. */
+export const VIENEU_PREFIX = 'vieneu:';
+
 export type TtsRequest =
-  | { ok: true; room: string; lang: TtsLang; text: string }
+  | { ok: true; room: string; lang: TtsLang; text: string; vieneuVoice: string | null }
   | { ok: false; status: number; error: string };
 
 /** Validates the query string of a /api/tts request. */
@@ -32,15 +37,34 @@ export function parseTtsRequest(url: URL): TtsRequest {
   if (!/^[A-Z]{4}$/.test(room)) return { ok: false, status: 400, error: 'bad_room' };
   if (lang !== 'vi' && lang !== 'en') return { ok: false, status: 400, error: 'bad_lang' };
   if (!text || text.length > TTS_MAX_CHARS) return { ok: false, status: 400, error: 'bad_text' };
-  return { ok: true, room, lang, text };
+  const voice = url.searchParams.get('voice') ?? '';
+  const vieneuVoice = voice.startsWith(VIENEU_PREFIX) ? voice.slice(VIENEU_PREFIX.length) : null;
+  if (vieneuVoice !== null && (!vieneuVoice || vieneuVoice.length > 64)) {
+    return { ok: false, status: 400, error: 'bad_voice' };
+  }
+  return { ok: true, room, lang, text, vieneuVoice };
+}
+
+/**
+ * Emotion cues understood by VieNeu ([cười], [thở dài], [hắng giọng]). Other engines would read
+ * them out loud, so they are removed for Google and for captions.
+ */
+const CUE_TAG = /\s*\[(?:cười|thở dài|hắng giọng)\]\s*/g;
+
+export function stripEmotionCues(text: string): string {
+  return text
+    .replace(CUE_TAG, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 }
 
 /** Calls Google Cloud TTS and returns MP3 bytes. Throws on failure. */
 export async function synthesize(
   config: TtsConfig,
   lang: TtsLang,
-  text: string,
+  rawText: string,
 ): Promise<ArrayBuffer> {
+  const text = stripEmotionCues(rawText);
   const voice = (lang === 'vi' ? config.voiceVi : config.voiceEn) ?? DEFAULT_VOICES[lang];
   const res = await fetch(
     `https://texttospeech.googleapis.com/v1/text:synthesize?key=${encodeURIComponent(config.apiKey)}`,
@@ -68,3 +92,80 @@ export const TTS_HEADERS = {
   // Same sentence → same audio; let browsers and the edge reuse it.
   'Cache-Control': 'public, max-age=604800',
 };
+
+// ---------------------------------------------------------------------------
+// VieNeu-TTS (https://github.com/pnnbao97/VieNeu-TTS), OpenAI-compatible API
+
+export interface VieneuConfig {
+  /** e.g. http://192.168.1.50:8000 (no trailing /v1). */
+  url: string;
+  /** Matches VIENEU_API_KEY on the VieNeu server, if set. */
+  apiKey?: string | undefined;
+}
+
+export interface VieneuVoice {
+  id: string;
+  name: string;
+  description: string;
+  featured: boolean;
+}
+
+export const VIENEU_HEADERS = {
+  'Content-Type': 'audio/wav',
+  'Cache-Control': 'public, max-age=604800',
+};
+
+function vieneuHeaders(config: VieneuConfig): Record<string, string> {
+  return config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {};
+}
+
+/** Synthesizes one line (emotion cues kept) and returns WAV bytes (48 kHz mono). */
+export async function synthesizeVieneu(
+  config: VieneuConfig,
+  voice: string,
+  text: string,
+  timeoutMs = 20_000,
+): Promise<ArrayBuffer> {
+  const res = await fetch(`${config.url.replace(/\/$/, '')}/v1/audio/speech`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...vieneuHeaders(config) },
+    body: JSON.stringify({ model: 'vieneu-v3-turbo', voice, input: text, response_format: 'wav' }),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!res.ok) throw new Error(`vieneu_${res.status}`);
+  return res.arrayBuffer();
+}
+
+/** Preset voices offered by the VieNeu server (featured first, as the server orders them). */
+export async function listVieneuVoices(config: VieneuConfig): Promise<VieneuVoice[]> {
+  const res = await fetch(`${config.url.replace(/\/$/, '')}/v1/voices`, {
+    headers: vieneuHeaders(config),
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (!res.ok) throw new Error(`vieneu_${res.status}`);
+  // OpenAI-style `{ object: 'list', data: [...] }`; also accept a bare array or `{ voices }`.
+  const body = (await res.json()) as { data?: unknown; voices?: unknown } | unknown[];
+  const list: unknown[] = Array.isArray(body)
+    ? body
+    : Array.isArray(body.data)
+      ? body.data
+      : Array.isArray(body.voices)
+        ? body.voices
+        : [];
+  return list
+    .filter((v): v is Record<string, unknown> => typeof v === 'object' && v !== null)
+    .map((v) => ({
+      id: String(v.id ?? v.name ?? ''),
+      name: String(v.name ?? v.id ?? ''),
+      description: String(v.description ?? ''),
+      featured: Boolean(v.featured), // a rank (1, 2, …) for featured voices, null otherwise
+    }))
+    .filter((v) => v.id);
+}
+
+export interface TtsVoicesResponse {
+  /** Google Cloud voice available on this server. */
+  google: boolean;
+  /** VieNeu preset voices; empty when VieNeu is not configured or not reachable. */
+  vieneu: VieneuVoice[];
+}

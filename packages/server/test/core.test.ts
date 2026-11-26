@@ -7,6 +7,7 @@ import {
   STALE_SOCKET_MS,
   TTS_MAX_CHARS,
   parseTtsRequest,
+  stripEmotionCues,
   type Conn,
   type ConnData,
   type RoomHost,
@@ -210,6 +211,13 @@ describe('parseTtsRequest', () => {
       room: 'ABCD',
       lang: 'vi',
       text: 'Xin chào',
+      vieneuVoice: null,
+    });
+  });
+  it('reads a VieNeu voice', () => {
+    expect(parse('room=ABCD&lang=vi&text=a&voice=vieneu%3ANg%E1%BB%8Dc%20Linh')).toMatchObject({
+      ok: true,
+      vieneuVoice: 'Ngọc Linh',
     });
   });
   it.each([
@@ -217,7 +225,14 @@ describe('parseTtsRequest', () => {
     ['room=ABCD&lang=fr&text=a', 'bad_lang'],
     ['room=ABCD&lang=vi&text=', 'bad_text'],
     [`room=ABCD&lang=vi&text=${'a'.repeat(TTS_MAX_CHARS + 1)}`, 'bad_text'],
+    ['room=ABCD&lang=vi&text=a&voice=vieneu%3A', 'bad_voice'],
   ])('rejects %s', (q, error) => {
     expect(parse(q)).toMatchObject({ ok: false, error });
+  });
+});
+
+describe('stripEmotionCues', () => {
+  it('removes the tags only the VieNeu voice understands', () => {
+    expect(stripEmotionCues('[thở dài] Trời sáng. [cười] Hết.')).toBe('Trời sáng. Hết.');
   });
 });

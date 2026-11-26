@@ -173,6 +173,10 @@ export const playVi = {
   repeat: 'Đọc lại',
   voiceCloud: 'Giọng Google (đám mây, rõ nhất)',
   voiceNone: 'Máy này không có giọng phù hợp',
+  voiceVieneu: 'VieNeu (máy chủ trong mạng, có cảm xúc)',
+  voiceDevice: 'Giọng của máy này',
+  voiceVieneuError:
+    'Không gọi được VieNeu (máy chủ giọng đọc đã tắt?). Đang dùng giọng dự phòng; chọn lại giọng để thử lại.',
   voiceCloudError:
     'Không gọi được giọng Google (mất mạng hoặc hết hạn mức). Đang dùng giọng của máy.',
   voiceMissingTitle: 'Máy này chưa có giọng đọc tiếng Việt, nên lời dẫn chỉ hiện chữ.',
@@ -357,6 +361,10 @@ export const playEn: Record<PlayKey, string> = {
   repeat: 'Repeat',
   voiceCloud: 'Google voice (cloud, clearest)',
   voiceNone: 'No suitable voice on this device',
+  voiceVieneu: 'VieNeu (local server, expressive)',
+  voiceDevice: 'This device’s voices',
+  voiceVieneuError:
+    'VieNeu is not answering (is the voice server off?). Using a backup voice; pick the voice again to retry.',
   voiceCloudError: 'The Google voice is unavailable (offline or quota). Using this device’s voice.',
   voiceMissingTitle:
     'This device has no voice for this language, so narration is shown as text only.',

@@ -198,7 +198,45 @@ function callLines(lang: Lang, call: string, oneNight: boolean): CallLines | und
   return (oneNight ? ONE_NIGHT_CALLS : CLASSIC_CALLS)[lang][call];
 }
 
-/** Text for one cue, or null if nothing should be said. */
+/**
+ * Emotion tags understood by the VieNeu-TTS voice: it laughs, sighs or clears its throat where
+ * the tag stands. Other voices would read the tag aloud, so they get the text without tags.
+ */
+export const EMOTION_TAGS = ['[cười]', '[thở dài]', '[hắng giọng]'] as const;
+const EMOTION_RE = /\s*\[(?:cười|thở dài|hắng giọng)\]\s*/g;
+
+/** Text without emotion tags, for captions and voices that do not understand them. */
+export function plainText(text: string): string {
+  return text.replace(EMOTION_RE, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Where the narrator shows a feeling: a throat-clear before solemn moments, a sigh for losses. */
+function emotion(cue: Cue): (typeof EMOTION_TAGS)[number] | null {
+  switch (cue.k) {
+    case 'game-start':
+    case 'voting':
+    case 'on-vote':
+      return '[hắng giọng]';
+    case 'dawn':
+    case 'on-result':
+      return cue.deaths.length ? '[thở dài]' : null;
+    case 'eliminated':
+      return '[thở dài]';
+    case 'game-over':
+      return cue.winners.length ? '[cười]' : '[thở dài]';
+    default:
+      return null;
+  }
+}
+
+/** What the narrator voice reads for one cue: the text with emotion tags, or null. */
+export function cueSpeech(cue: Cue, lang: Lang, names: Names, oneNight: boolean): string | null {
+  const text = cueText(cue, lang, names, oneNight);
+  const tag = emotion(cue);
+  return text && tag ? `${tag} ${text}` : text;
+}
+
+/** Text for one cue (captions; no emotion tags), or null if nothing should be said. */
 export function cueText(cue: Cue, lang: Lang, names: Names, oneNight: boolean): string | null {
   const t = T[lang];
   switch (cue.k) {

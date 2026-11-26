@@ -7,6 +7,7 @@ import {
   routeApi,
   synthesize,
   type ServerInfoResponse,
+  type TtsVoicesResponse,
 } from '@bwf/server';
 
 export { Room } from './room.ts';
@@ -31,6 +32,9 @@ export default {
         } satisfies ServerInfoResponse);
       case 'tts':
         return tts(request, env, ctx);
+      case 'tts-voices':
+        // VieNeu runs on the local network; only the LAN server can reach it.
+        return json({ google: !!env.GOOGLE_TTS_API_KEY, vieneu: [] } satisfies TtsVoicesResponse);
       case 'create':
         for (let attempt = 0; attempt < CREATE_ATTEMPTS; attempt++) {
           const code = randomRoomCode();
@@ -58,6 +62,7 @@ async function tts(request: Request, env: Env, ctx: ExecutionContext): Promise<R
   const url = new URL(request.url);
   const req = parseTtsRequest(url);
   if (!req.ok) return json({ error: req.error }, req.status);
+  if (req.vieneuVoice !== null) return json({ error: 'tts_not_configured' }, 501);
 
   // The cache key ignores the room so every room shares cached sentences.
   const key = new Request(

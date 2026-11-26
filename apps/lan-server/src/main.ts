@@ -23,8 +23,13 @@ import {
   routeApi,
   secureRandom,
   synthesize,
+  synthesizeVieneu,
+  listVieneuVoices,
   parseTtsRequest,
   TTS_HEADERS,
+  VIENEU_HEADERS,
+  type TtsVoicesResponse,
+  type VieneuConfig,
   type Conn,
   type ConnData,
   type ServerInfoResponse,
@@ -46,7 +51,12 @@ const DATA_DIR = args.data ? resolve(args.data) : null;
 const PORT = Number(args.port);
 // Optional cloud voice; needs internet. GOOGLE_TTS_API_KEY=… pnpm lan
 const TTS_KEY = process.env.GOOGLE_TTS_API_KEY;
-const ttsCache = new Map<string, ArrayBuffer>();
+// Self-hosted VieNeu-TTS on this or another machine of the local network (works offline):
+// VIENEU_URL=http://192.168.1.50:8000 pnpm lan
+const VIENEU: VieneuConfig | null = process.env.VIENEU_URL
+  ? { url: process.env.VIENEU_URL, apiKey: process.env.VIENEU_API_KEY }
+  : null;
+const ttsCache = new Map<string, { audio: ArrayBuffer; headers: Record<string, string> }>();
 
 // ---------------------------------------------------------------------------
 // Rooms
@@ -198,32 +208,50 @@ const server = createServer(async (req, res) => {
     case 'server':
       return json(res, 200, {
         lanOrigin: lanOrigin(),
-        tts: !!TTS_KEY,
+        tts: !!TTS_KEY || !!VIENEU,
       } satisfies ServerInfoResponse);
+    case 'tts-voices': {
+      let vieneu: TtsVoicesResponse['vieneu'] = [];
+      if (VIENEU) vieneu = await listVieneuVoices(VIENEU).catch(() => []);
+      return json(res, 200, { google: !!TTS_KEY, vieneu } satisfies TtsVoicesResponse);
+    }
     case 'tts': {
-      if (!TTS_KEY) return json(res, 501, { error: 'tts_not_configured' });
       const parsed = parseTtsRequest(url);
       if (!parsed.ok) return json(res, parsed.status, { error: parsed.error });
       if (!rooms.has(parsed.room)) return json(res, 404, { error: 'room_not_found' });
-      const key = `${parsed.lang}|${parsed.text}`;
+      const vieneuVoice = parsed.vieneuVoice;
+      if (vieneuVoice !== null ? !VIENEU : !TTS_KEY) {
+        return json(res, 501, { error: 'tts_not_configured' });
+      }
+      const key = `${vieneuVoice ?? 'google'}|${parsed.lang}|${parsed.text}`;
       try {
-        let audio = ttsCache.get(key);
-        if (!audio) {
-          audio = await synthesize(
-            {
-              apiKey: TTS_KEY,
-              voiceVi: process.env.GOOGLE_TTS_VOICE_VI,
-              voiceEn: process.env.GOOGLE_TTS_VOICE_EN,
-            },
-            parsed.lang,
-            parsed.text,
-          );
+        let hit = ttsCache.get(key);
+        if (!hit) {
+          hit =
+            vieneuVoice !== null && VIENEU
+              ? {
+                  audio: await synthesizeVieneu(VIENEU, vieneuVoice, parsed.text),
+                  headers: VIENEU_HEADERS,
+                }
+              : {
+                  audio: await synthesize(
+                    {
+                      apiKey: TTS_KEY!,
+                      voiceVi: process.env.GOOGLE_TTS_VOICE_VI,
+                      voiceEn: process.env.GOOGLE_TTS_VOICE_EN,
+                    },
+                    parsed.lang,
+                    parsed.text,
+                  ),
+                  headers: TTS_HEADERS,
+                };
           if (ttsCache.size > 500) ttsCache.clear();
-          ttsCache.set(key, audio);
+          ttsCache.set(key, hit);
         }
-        res.writeHead(200, TTS_HEADERS);
-        return res.end(Buffer.from(audio));
-      } catch {
+        res.writeHead(200, hit.headers);
+        return res.end(Buffer.from(hit.audio));
+      } catch (error) {
+        console.warn('tts failed:', (error as Error).message);
         return json(res, 502, { error: 'tts_failed' });
       }
     }
@@ -288,8 +316,12 @@ server.listen(PORT, args.host, () => {
   console.log(`   Narrator (this Mac):  http://localhost:${PORT}`);
   console.log(`   Phones (same wifi):   ${lan ?? '(no network found)'}`);
   if (DATA_DIR) console.log(`   Saving rooms in:      ${DATA_DIR}`);
-  console.log(
-    `   Narration voice:      ${TTS_KEY ? 'Google Cloud TTS (needs internet)' : 'browser voice'}`,
-  );
+  const voices = [
+    VIENEU && `VieNeu at ${VIENEU.url}`,
+    TTS_KEY && 'Google Cloud TTS (needs internet)',
+  ]
+    .filter(Boolean)
+    .join(' + ');
+  console.log(`   Narration voice:      ${voices || 'browser voice only'}`);
   console.log('   Press Ctrl+C to stop.\n');
 });

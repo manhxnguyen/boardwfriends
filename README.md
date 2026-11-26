@@ -64,14 +64,28 @@ pnpm lan          # builds everything, then serves the app on port 8080
 
 ### Narration voice
 
-The narrator screen reads with, in order of preference:
+The narrator screen has a **Giọng đọc** dropdown. By default it reads with, in order of preference:
 
-1. **Google Cloud Text-to-Speech** (`vi-VN-Neural2-A`, the clearest Vietnamese) when the server has an
+1. **[VieNeu-TTS](https://github.com/pnnbao97/VieNeu-TTS)** (self-hosted, offline, LAN server only).
+   The narrator shows feelings with VieNeu's emotion tags: it clears its throat before the game
+   and votes, sighs at deaths and laughs when a side wins. Other voices and captions get the text
+   without tags. Default voice: “Ngọc Linh”. VieNeu reads Vietnamese only; English lines use Google
+   or the device voice. Each sentence takes about 0.5 s on an M-series Mac, and the next sentence is
+   generated while the current one plays.
+
+   ```sh
+   # Terminal 1: in the VieNeu-TTS folder (HOST=0.0.0.0 when it runs on another PC)
+   uv run python -m apps.openai_speech
+   # Terminal 2: here
+   VIENEU_URL=http://127.0.0.1:8000 pnpm lan   # optional VIENEU_API_KEY=…
+   ```
+
+2. **Google Cloud Text-to-Speech** (`vi-VN-Neural2-A`, the clearest Vietnamese) when the server has an
    API key: `pnpm --filter @bwf/worker exec wrangler secret put GOOGLE_TTS_API_KEY` (Cloudflare) or
    `GOOGLE_TTS_API_KEY=… pnpm lan:start` (LAN, needs internet). Optional `GOOGLE_TTS_VOICE_VI` /
    `GOOGLE_TTS_VOICE_EN` pick other voices. Free tier: 1M characters/month for Neural2.
-2. A voice installed on the device for the right language (Edge "Natural" voices, macOS "Enhanced").
-3. Never a voice of another language: if none is installed, the screen explains how to add one.
+3. A voice installed on the device for the right language (Edge "Natural" voices, macOS "Enhanced").
+4. Never a voice of another language: if none is installed, the screen explains how to add one.
 
 ### Voice commands (paused)
 

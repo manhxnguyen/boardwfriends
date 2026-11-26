@@ -4,14 +4,14 @@
   import { joinUrl } from '../api.ts';
   import { RoomConnection } from '../connection.svelte.ts';
   import { sceneArt } from '../content/art.ts';
-  import { callTitle, cueText } from '../content/narration.ts';
+  import { callTitle, cueSpeech, cueText } from '../content/narration.ts';
   import { ONE_NIGHT_ICON, ONE_NIGHT_TEXT } from '../content/one-night-roles.ts';
   import { ROLE_ICON, ROLE_TEXT, TEAM_TEXT } from '../content/roles.ts';
   import { i18n, t } from '../i18n.svelte.ts';
   import { VOICE_COMMANDS } from '../features.ts';
   import { Listener } from '../listener.svelte.ts';
   import { setTheme, themeFor } from '../theme.ts';
-  import { CLOUD_VOICE, Narrator } from '../narrator.svelte.ts';
+  import { CLOUD_VOICE, Narrator, VIENEU_PREFIX } from '../narrator.svelte.ts';
   import { qrSvg } from '../qr.ts';
   import { parseVoiceCommand, type VoiceCommand } from '../voice-commands.ts';
   import { WakeLock } from '../wakeLock.svelte.ts';
@@ -81,7 +81,10 @@
         const text = cueText(entry.cue, i18n.lang, names, play.kind === 'one-night');
         if (text) {
           caption = text;
-          narrator.speak(text, i18n.lang);
+          narrator.speak(
+            cueSpeech(entry.cue, i18n.lang, names, play.kind === 'one-night') ?? text,
+            i18n.lang,
+          );
         }
       }
       lastSeq = Math.max(lastSeq, maxSeq);
@@ -378,16 +381,29 @@
       {t('voiceName')}
       <select
         class="rounded-lg border border-night-600 bg-night-950 px-2 py-1"
-        value={narrator.usingCloud ? CLOUD_VOICE : (narrator.voiceURI ?? voices[0]?.voiceURI ?? '')}
+        value={narrator.selected ?? voices[0]?.voiceURI ?? ''}
         onchange={(e) => narrator.setVoice(e.currentTarget.value)}
       >
+        {#if narrator.vieneuVoices.length}
+          <optgroup label={t('voiceVieneu')}>
+            {#each narrator.vieneuVoices as v (v.id)}
+              <option value={VIENEU_PREFIX + v.id}>
+                {v.featured ? '⭐ ' : ''}{v.name}{v.description ? ` · ${v.description}` : ''}
+              </option>
+            {/each}
+          </optgroup>
+        {/if}
         {#if narrator.cloudAvailable}
           <option value={CLOUD_VOICE}>☁️ {t('voiceCloud')}</option>
         {/if}
-        {#each voices as v (v.voiceURI)}
-          <option value={v.voiceURI}>{v.name}</option>
-        {/each}
-        {#if !narrator.cloudAvailable && !voices.length}
+        {#if voices.length}
+          <optgroup label={t('voiceDevice')}>
+            {#each voices as v (v.voiceURI)}
+              <option value={v.voiceURI}>{v.name}</option>
+            {/each}
+          </optgroup>
+        {/if}
+        {#if !narrator.cloudAvailable && !narrator.vieneuVoices.length && !voices.length}
           <option value="" disabled>{t('voiceNone')}</option>
         {/if}
       </select>
@@ -406,6 +422,9 @@
     >
       🔁 {t('repeat')}
     </button>
+    {#if narrator.vieneuError}
+      <p class="w-full text-xs text-moon">⚠️ {t('voiceVieneuError')}</p>
+    {/if}
     {#if narrator.cloudError}
       <p class="w-full text-xs text-moon">⚠️ {t('voiceCloudError')}</p>
     {/if}
