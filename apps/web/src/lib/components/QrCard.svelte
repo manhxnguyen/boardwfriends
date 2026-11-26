@@ -10,7 +10,11 @@
 
 <section class="mt-6 flex flex-col items-center gap-3">
   <!-- Light background on purpose: dark-on-light QR codes scan most reliably. -->
-  <div class="w-48 rounded-2xl bg-white p-2" role="img" aria-label={t('scanToJoin')}>
+  <div
+    class="w-48 rounded-2xl bg-white p-2 phone-land:w-32"
+    role="img"
+    aria-label={t('scanToJoin')}
+  >
     {@html svg}
   </div>
   <p class="text-sm text-slate-400">{t('scanToJoin')}</p>

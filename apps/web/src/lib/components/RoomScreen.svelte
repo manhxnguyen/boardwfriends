@@ -173,24 +173,32 @@
     {#if game.phase === 'setup'}
       <!-- ───────────── Setup: lobby, settings, deck ───────────── -->
       <!-- Laptops: room/QR/players on the left, settings and deck on the right. -->
-      <div class="lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start lg:gap-10">
-        <div class="lg:sticky lg:top-6">
-          <section class="mt-6 text-center">
+      <div
+        class="lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start lg:gap-10 phone-land:grid phone-land:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] phone-land:items-start phone-land:gap-6"
+      >
+        <div
+          class="lg:sticky lg:top-6 phone-land:grid phone-land:grid-cols-2 phone-land:items-center phone-land:gap-x-4"
+        >
+          <section class="mt-6 text-center phone-land:mt-2">
             <p class="text-sm tracking-widest text-slate-400 uppercase">{t('room')}</p>
-            <p class="font-mono text-6xl font-bold tracking-[0.25em] text-moon">{code}</p>
+            <p class="font-mono text-6xl font-bold tracking-[0.25em] text-moon phone-land:text-4xl">
+              {code}
+            </p>
           </section>
 
           <QrCard {url} onShare={share} />
 
-          <PlayerList
-            lobby={room.lobby}
-            you={conn.you}
-            isHost={conn.isHost}
-            moderatorId={game.setup?.mode === 'manual' ? (game.setup.moderatorId ?? null) : null}
-            onRename={rename}
-            onKick={(id) => conn.kick(id)}
-            onReorder={conn.isHost ? (order) => conn.send({ t: 'seats', order }) : undefined}
-          />
+          <div class="phone-land:col-span-2">
+            <PlayerList
+              lobby={room.lobby}
+              you={conn.you}
+              isHost={conn.isHost}
+              moderatorId={game.setup?.mode === 'manual' ? (game.setup.moderatorId ?? null) : null}
+              onRename={rename}
+              onKick={(id) => conn.kick(id)}
+              onReorder={conn.isHost ? (order) => conn.send({ t: 'seats', order }) : undefined}
+            />
+          </div>
         </div>
         <div>
           {#if conn.isHost && game.setup}

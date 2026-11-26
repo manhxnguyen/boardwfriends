@@ -65,7 +65,9 @@
   );
 </script>
 
-<section class="sticky top-0 z-10 -mx-4 mt-3 bg-night-950/95 px-4 py-2 backdrop-blur">
+<section
+  class="sticky top-0 z-10 -mx-4 mt-3 bg-night-950/95 px-4 py-2 backdrop-blur phone-land:static! phone-land:mt-1 phone-land:py-1"
+>
   <div class="flex items-center justify-between">
     <div>
       <h1 class="text-xl font-bold">{title}</h1>
@@ -83,19 +85,25 @@
     </p>
   {/if}
   {#if caption}
-    <p class="mt-2 rounded-lg bg-night-900 px-3 py-2 text-sm leading-snug text-slate-200">
+    <p
+      class="mt-2 rounded-lg bg-night-900 px-3 py-2 text-sm leading-snug text-slate-200 phone-land:mt-1 phone-land:py-1 phone-land:text-xs"
+    >
       🎙️ {caption}
     </p>
   {/if}
 </section>
 
 <!-- Phones: one column. Tablets/laptops: card + notebook on the left, actions on the right. -->
-<div class="md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-start md:gap-8">
-  <div class="md:sticky md:top-32">
+<div
+  class="md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-start md:gap-8 phone-land:grid phone-land:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] phone-land:items-start phone-land:gap-4"
+>
+  <div class="md:sticky md:top-32 phone-land:static!">
     {#if you}
       {#if phase.kind === 'reveal'}
-        <section class="mt-6 flex flex-col items-center gap-4 text-center">
-          <p class="text-sm font-semibold text-moon">🤫 {t('keepSecret')}</p>
+        <section
+          class="mt-6 flex flex-col items-center gap-4 text-center phone-land:mt-1 phone-land:gap-1"
+        >
+          <p class="text-sm font-semibold text-moon phone-land:text-xs">🤫 {t('keepSecret')}</p>
           <HoldToReveal onFirstReveal={() => conn.markSeen()}>
             <OneNightCard role={you.role} />
           </HoldToReveal>
@@ -105,7 +113,7 @@
         </section>
       {:else}
         <section
-          class="mt-4 grid grid-cols-[8rem_1fr] items-start gap-3 md:grid-cols-1 md:justify-items-center"
+          class="mt-4 grid grid-cols-[8rem_1fr] items-start gap-3 md:grid-cols-1 md:justify-items-center phone-land:grid-cols-1! phone-land:justify-items-center!"
         >
           <HoldToReveal compact>
             <OneNightCard role={you.role} />

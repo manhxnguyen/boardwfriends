@@ -46,8 +46,8 @@
 <button
   type="button"
   class="reveal mx-auto block w-full touch-none outline-none {compact
-    ? 'max-w-40 md:max-w-56'
-    : 'max-w-72 md:max-w-80'}"
+    ? 'max-w-40 md:max-w-56 phone-land:max-w-[min(7.5rem,calc((100dvh_-_11rem)_*_5_/_7))]!'
+    : 'max-w-72 md:max-w-80 phone-land:max-w-[min(10.5rem,calc((100dvh_-_10rem)_*_5_/_7))]!'}"
   aria-label={t('holdToReveal')}
   aria-pressed={holding}
   onpointerdown={show}

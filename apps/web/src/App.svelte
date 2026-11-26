@@ -18,7 +18,7 @@
 {:else}
   <main
     class="mx-auto flex min-h-dvh w-full flex-col px-4 py-6 {router.route.name === 'room'
-      ? 'max-w-md md:max-w-3xl md:px-6 lg:max-w-6xl'
+      ? 'max-w-md md:max-w-3xl md:px-6 lg:max-w-6xl phone-land:max-w-none phone-land:px-6 phone-land:py-3'
       : 'max-w-md'}"
   >
     {#if router.route.name === 'room'}

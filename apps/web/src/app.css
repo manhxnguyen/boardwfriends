@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Phone held sideways: wide but very short, so layouts go two-column and compact. */
+@custom-variant phone-land (@media (orientation: landscape) and (max-height: 500px));
+
 @theme {
   --color-night-950: #070d17;
   --color-night-900: #0f1b2d;
