@@ -45,7 +45,9 @@
 
 <button
   type="button"
-  class="reveal mx-auto block w-full touch-none outline-none {compact ? 'max-w-40' : 'max-w-72'}"
+  class="reveal mx-auto block w-full touch-none outline-none {compact
+    ? 'max-w-40 md:max-w-56'
+    : 'max-w-72 md:max-w-80'}"
   aria-label={t('holdToReveal')}
   aria-pressed={holding}
   onpointerdown={show}

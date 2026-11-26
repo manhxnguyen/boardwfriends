@@ -19,7 +19,7 @@
   <div class="mt-2 flex items-start gap-2">
     <CopyLinkButton {url} />
     <a
-      class="rounded-full bg-night-800 px-3 py-1.5 text-xs"
+      class="inline-flex min-h-11 items-center rounded-full bg-night-800 px-4 text-sm"
       href={url}
       target="_blank"
       rel="noopener"

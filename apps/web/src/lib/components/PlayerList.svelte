@@ -60,10 +60,10 @@
       {@const isYou = player.id === you}
       <li class="flex min-h-14 items-center gap-3 px-4 py-2">
         {#if onReorder}
-          <span class="flex flex-col">
+          <span class="flex">
             <button
               type="button"
-              class="px-1 text-xs leading-none text-slate-400 disabled:opacity-20"
+              class="flex size-11 items-center justify-center rounded-lg text-sm leading-none text-slate-400 hover:bg-night-800 disabled:opacity-20"
               aria-label={t('moveUp')}
               disabled={index === 0}
               onclick={() => move(index, -1)}
@@ -72,7 +72,7 @@
             </button>
             <button
               type="button"
-              class="px-1 text-xs leading-none text-slate-400 disabled:opacity-20"
+              class="flex size-11 items-center justify-center rounded-lg text-sm leading-none text-slate-400 hover:bg-night-800 disabled:opacity-20"
               aria-label={t('moveDown')}
               disabled={index === lobby.players.length - 1}
               onclick={() => move(index, 1)}
@@ -122,7 +122,7 @@
           {#if isYou}
             <button
               type="button"
-              class="px-2 py-2 text-sm text-slate-400"
+              class="min-h-11 px-2 text-sm text-slate-400"
               onclick={() => startEdit(player.name)}
             >
               {t('rename')}
@@ -130,7 +130,7 @@
           {:else if isHost}
             <button
               type="button"
-              class="px-2 py-2 text-sm text-wolf"
+              class="min-h-11 px-2 text-sm text-wolf"
               onclick={() => kick(player.id, player.name)}
             >
               {t('kick')}

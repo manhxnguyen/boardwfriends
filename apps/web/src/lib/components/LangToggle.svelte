@@ -6,7 +6,7 @@
   {#each ['vi', 'en'] as const as lang (lang)}
     <button
       type="button"
-      class="px-3 py-1.5 uppercase transition-colors {i18n.lang === lang
+      class="min-h-11 min-w-11 px-3 uppercase transition-colors {i18n.lang === lang
         ? 'bg-moon text-night-950'
         : 'text-slate-300'}"
       aria-pressed={i18n.lang === lang}

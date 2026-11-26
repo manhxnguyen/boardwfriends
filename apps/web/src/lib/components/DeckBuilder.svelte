@@ -126,7 +126,7 @@
         {#each presets as preset (preset.id)}
           <button
             type="button"
-            class="rounded-full bg-night-800 px-4 py-2 text-sm font-medium active:bg-night-700"
+            class="min-h-11 rounded-full bg-night-800 px-4 py-2 text-sm font-medium active:bg-night-700"
             onclick={() => applyPreset(preset)}
           >
             {t(presetLabel[preset.id])}
@@ -163,7 +163,7 @@
             </span>
             <button
               type="button"
-              class="size-10 rounded-lg bg-night-800 text-xl disabled:opacity-30"
+              class="size-11 rounded-lg bg-night-800 text-xl disabled:opacity-30"
               aria-label="−"
               disabled={count === 0}
               onclick={() => setCount(id, count - 1)}
@@ -173,7 +173,7 @@
             <span class="w-6 text-center font-mono text-lg">{count}</span>
             <button
               type="button"
-              class="size-10 rounded-lg bg-night-800 text-xl disabled:opacity-30"
+              class="size-11 rounded-lg bg-night-800 text-xl disabled:opacity-30"
               aria-label="+"
               disabled={count >= def.max}
               onclick={() => setCount(id, count + 1)}

@@ -117,7 +117,9 @@
 </script>
 
 <header class="flex items-center justify-between">
-  <button type="button" class="text-sm text-slate-400" onclick={goHome}>← {t('backHome')}</button>
+  <button type="button" class="-ml-2 min-h-11 px-2 text-sm text-slate-400" onclick={goHome}>
+    ← {t('backHome')}
+  </button>
   {#if game && game.phase !== 'setup'}
     <span class="font-mono text-sm tracking-widest text-moon">
       {code} · {t('round', { n: String(game.round) })}
@@ -170,52 +172,58 @@
   {#if room && conn.you && game}
     {#if game.phase === 'setup'}
       <!-- ───────────── Setup: lobby, settings, deck ───────────── -->
-      <section class="mt-6 text-center">
-        <p class="text-sm tracking-widest text-slate-400 uppercase">{t('room')}</p>
-        <p class="font-mono text-6xl font-bold tracking-[0.25em] text-moon">{code}</p>
-      </section>
+      <!-- Laptops: room/QR/players on the left, settings and deck on the right. -->
+      <div class="lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start lg:gap-10">
+        <div class="lg:sticky lg:top-6">
+          <section class="mt-6 text-center">
+            <p class="text-sm tracking-widest text-slate-400 uppercase">{t('room')}</p>
+            <p class="font-mono text-6xl font-bold tracking-[0.25em] text-moon">{code}</p>
+          </section>
 
-      <QrCard {url} onShare={share} />
+          <QrCard {url} onShare={share} />
 
-      <PlayerList
-        lobby={room.lobby}
-        you={conn.you}
-        isHost={conn.isHost}
-        moderatorId={game.setup?.mode === 'manual' ? (game.setup.moderatorId ?? null) : null}
-        onRename={rename}
-        onKick={(id) => conn.kick(id)}
-        onReorder={conn.isHost ? (order) => conn.send({ t: 'seats', order }) : undefined}
-      />
-
-      {#if conn.isHost && game.setup}
-        {@const setup = game.setup}
-        <GameSettings {setup} onChange={updateSetup} />
-        {#if setup.game === 'one-night' || setup.mode === 'auto'}
-          <NarratorLink url={narratorUrl(code)} {code} displays={room.lobby.displays} />
-        {/if}
-        {#if setup.game === 'classic'}
-          <DeckBuilder
+          <PlayerList
             lobby={room.lobby}
-            {setup}
-            onChange={updateSetup}
-            onDeal={() => conn.deal()}
+            you={conn.you}
+            isHost={conn.isHost}
+            moderatorId={game.setup?.mode === 'manual' ? (game.setup.moderatorId ?? null) : null}
+            onRename={rename}
+            onKick={(id) => conn.kick(id)}
+            onReorder={conn.isHost ? (order) => conn.send({ t: 'seats', order }) : undefined}
           />
-        {:else}
-          <OneNightDeck
-            lobby={room.lobby}
-            {setup}
-            onChange={updateSetup}
-            onDeal={() => conn.deal()}
-          />
-        {/if}
-      {:else}
-        <p class="mt-6 text-center text-slate-300">{t('deckChoosing')}</p>
-        {#if game.setup && game.setup.game === 'classic' && Object.keys(game.setup.roles).length}
-          <div class="mt-4"><DeckSummary roles={game.setup.roles} /></div>
-        {:else if !game.setup}
-          <p class="mt-2 text-center text-sm text-slate-400">{t('deckHidden')}</p>
-        {/if}
-      {/if}
+        </div>
+        <div>
+          {#if conn.isHost && game.setup}
+            {@const setup = game.setup}
+            <GameSettings {setup} onChange={updateSetup} />
+            {#if setup.game === 'one-night' || setup.mode === 'auto'}
+              <NarratorLink url={narratorUrl(code)} {code} displays={room.lobby.displays} />
+            {/if}
+            {#if setup.game === 'classic'}
+              <DeckBuilder
+                lobby={room.lobby}
+                {setup}
+                onChange={updateSetup}
+                onDeal={() => conn.deal()}
+              />
+            {:else}
+              <OneNightDeck
+                lobby={room.lobby}
+                {setup}
+                onChange={updateSetup}
+                onDeal={() => conn.deal()}
+              />
+            {/if}
+          {:else}
+            <p class="mt-6 text-center text-slate-300">{t('deckChoosing')}</p>
+            {#if game.setup && game.setup.game === 'classic' && Object.keys(game.setup.roles).length}
+              <div class="mt-4"><DeckSummary roles={game.setup.roles} /></div>
+            {:else if !game.setup}
+              <p class="mt-2 text-center text-sm text-slate-400">{t('deckHidden')}</p>
+            {/if}
+          {/if}
+        </div>
+      </div>
     {:else if game.phase === 'playing'}
       <!-- ───────────── App-moderated game ───────────── -->
       {#if game.play.kind === 'classic'}
@@ -272,7 +280,7 @@
     {/if}
   {/if}
 
-  <footer class="mt-auto flex flex-col gap-3 pt-8">
+  <footer class="mt-auto flex w-full flex-col gap-3 pt-8 md:mx-auto md:max-w-md">
     <label class="flex items-center justify-between rounded-xl bg-night-900 px-4 py-3">
       <span class={wakeLock.supported ? '' : 'text-slate-500'}>
         {wakeLock.supported ? t('keepAwake') : t('keepAwakeUnsupported')}
@@ -285,7 +293,7 @@
         onchange={() => wakeLock.toggle()}
       />
     </label>
-    <button type="button" class="py-2 text-sm text-slate-400 underline" onclick={leave}>
+    <button type="button" class="min-h-11 text-sm text-slate-400 underline" onclick={leave}>
       {t('leave')}
     </button>
   </footer>

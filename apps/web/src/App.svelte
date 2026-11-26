@@ -16,7 +16,11 @@
     <DisplayScreen code={router.route.code} />
   {/key}
 {:else}
-  <main class="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 py-6">
+  <main
+    class="mx-auto flex min-h-dvh w-full flex-col px-4 py-6 {router.route.name === 'room'
+      ? 'max-w-md md:max-w-3xl md:px-6 lg:max-w-6xl'
+      : 'max-w-md'}"
+  >
     {#if router.route.name === 'room'}
       {#key router.route.code}
         <RoomPage code={router.route.code} />

@@ -20,7 +20,7 @@
     type="button"
     class="rounded-full font-medium {state === 'copied'
       ? 'bg-ok text-night-950'
-      : 'bg-night-800'} {large ? 'px-5 py-2.5 text-base' : 'px-4 py-2 text-sm'}"
+      : 'bg-night-800'} {large ? 'min-h-12 px-5 py-2.5 text-base' : 'min-h-11 px-4 py-2 text-sm'}"
     onclick={copy}
   >
     {state === 'copied' ? `✓ ${t('copied')}` : `📋 ${t('copyLink')}`}

@@ -21,7 +21,9 @@
 
 <button
   type="button"
-  class="rounded-full bg-night-800 font-semibold {large ? 'px-4 py-2' : 'px-3 py-1.5 text-xs'}"
+  class="rounded-full bg-night-800 font-semibold {large
+    ? 'min-h-11 px-4 py-2'
+    : 'min-h-11 min-w-11 px-3 text-xs'}"
   aria-label={t('rules')}
   aria-haspopup="dialog"
   onclick={() => (open = true)}

@@ -74,7 +74,7 @@
 </script>
 
 {#if options.length && count > 0}
-  <ul class="grid grid-cols-2 gap-2">
+  <ul class="grid grid-cols-2 gap-2 lg:grid-cols-3">
     {#each options as id (id)}
       {@const on = localPlayers.includes(id)}
       <li>

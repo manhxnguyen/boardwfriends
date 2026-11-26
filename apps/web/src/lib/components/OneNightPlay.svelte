@@ -89,143 +89,152 @@
   {/if}
 </section>
 
-{#if you}
-  {#if phase.kind === 'reveal'}
-    <section class="mt-6 flex flex-col items-center gap-4 text-center">
-      <p class="text-sm font-semibold text-moon">🤫 {t('keepSecret')}</p>
-      <HoldToReveal onFirstReveal={() => conn.markSeen()}>
-        <OneNightCard role={you.role} />
-      </HoldToReveal>
-      <p class="text-sm text-slate-400">
-        {t('seenProgress', { seen: String(phase.seen), total: String(phase.total) })}
-      </p>
-    </section>
-  {:else}
-    <section class="mt-4 grid grid-cols-[8rem_1fr] items-start gap-3">
-      <HoldToReveal compact>
-        <OneNightCard role={you.role} />
-      </HoldToReveal>
-      <Notebook knowledge={you.knowledge} {names} />
-    </section>
-
-    <section class="mt-5">
-      {#if you.prompt.kind === 'pick'}
-        {@const prompt = you.prompt}
-        <h2 class="mb-1 text-lg font-bold">{t(pickTitle[prompt.purpose] ?? 'suspectTitle')}</h2>
-        {#if prompt.purpose === 'suspect'}
-          <p class="mb-2 text-xs text-slate-400">{t('suspectHint')}</p>
-        {/if}
-        <!-- New question → fresh picker (no stale local selection). -->
-        {#key prompt.purpose}
-          <PlayerPicker
-            options={prompt.options}
-            count={prompt.purpose === 'on-seer' ? 1 : prompt.count}
-            centerCount={prompt.centerCount}
-            centerAlternative={prompt.purpose === 'on-seer'}
-            selected={prompt.selected}
-            selectedCenter={prompt.selectedCenter}
-            locked={prompt.locked}
-            {names}
-            onSubmit={(players, center) => conn.send({ t: 'act', players, center })}
-          />
-        {/key}
-      {:else if you.prompt.kind === 'accuse'}
-        {@const prompt = you.prompt}
-        <h2 class="mb-2 text-lg font-bold">{t('accuseTitle')}</h2>
-        <ul class="grid grid-cols-2 gap-2">
-          {#each prompt.options as id (id)}
-            <li>
-              <button
-                type="button"
-                class="min-h-14 w-full rounded-xl px-3 py-3 text-left font-semibold {prompt.yours ===
-                id
-                  ? 'bg-wolf'
-                  : 'bg-night-800'}"
-                onclick={() => conn.send({ t: 'accuse', target: id })}
-              >
-                👉 {names(id)}
-              </button>
-            </li>
-          {/each}
-        </ul>
-        {#if phase.kind === 'vote'}
-          <p class="mt-3 text-center text-sm text-slate-400">
-            {t('votesProgress', { n: String(phase.voted), total: String(phase.total) })}
+<!-- Phones: one column. Tablets/laptops: card + notebook on the left, actions on the right. -->
+<div class="md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-start md:gap-8">
+  <div class="md:sticky md:top-32">
+    {#if you}
+      {#if phase.kind === 'reveal'}
+        <section class="mt-6 flex flex-col items-center gap-4 text-center">
+          <p class="text-sm font-semibold text-moon">🤫 {t('keepSecret')}</p>
+          <HoldToReveal onFirstReveal={() => conn.markSeen()}>
+            <OneNightCard role={you.role} />
+          </HoldToReveal>
+          <p class="text-sm text-slate-400">
+            {t('seenProgress', { seen: String(phase.seen), total: String(phase.total) })}
           </p>
-        {/if}
-      {:else if phase.kind === 'over' && view.result}
-        <p class="text-center text-2xl font-bold">{youWon ? t('youWon') : t('youLost')}</p>
+        </section>
+      {:else}
+        <section
+          class="mt-4 grid grid-cols-[8rem_1fr] items-start gap-3 md:grid-cols-1 md:justify-items-center"
+        >
+          <HoldToReveal compact>
+            <OneNightCard role={you.role} />
+          </HoldToReveal>
+          <Notebook knowledge={you.knowledge} {names} />
+        </section>
       {/if}
-    </section>
-  {/if}
-{/if}
-
-{#if view.result}
-  {@const result = view.result}
-  <section class="mt-6 overflow-hidden rounded-xl bg-night-900">
-    <table class="w-full text-sm">
-      <thead class="bg-night-800 text-left text-xs text-slate-400">
-        <tr>
-          <th class="px-3 py-2"></th><th class="px-2">{t('dealt')}</th><th class="px-2">
-            {t('final')}
-          </th><th class="px-2">🗳️</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each view.seats as seat (seat.id)}
-          {@const dead = result.deaths.includes(seat.id)}
-          {@const won = result.winningPlayers.includes(seat.id)}
-          <tr class="border-t border-night-800">
-            <td class="px-3 py-2 font-semibold {dead ? 'text-wolf line-through' : ''}">
-              {won ? '🏆 ' : ''}{names(seat.id)}
-            </td>
-            <td class="px-2 text-slate-400">{roleName(result.original[seat.id]!)}</td>
-            <td class="px-2">
-              {roleName(result.final[seat.id]!)}{result.final[seat.id] === 'doppelganger' &&
-              result.doppelCopy
-                ? ` → ${roleName(result.doppelCopy)}`
-                : ''}
-            </td>
-            <td class="px-2 font-mono">{tally[seat.id] ?? 0}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-    <p class="border-t border-night-800 px-3 py-2 text-sm">
-      {t('centerLabel')}: {result.center.map(roleName).join(' · ')}
-    </p>
-  </section>
-{/if}
-
-{#if phase.kind === 'reveal' && isHost}
-  <button
-    type="button"
-    class="mt-6 w-full rounded-xl bg-moon px-4 py-4 text-lg font-bold text-night-950"
-    onclick={() => conn.send({ t: 'start' })}
-  >
-    🌙 {t('startNight')}
-  </button>
-{:else if phase.kind === 'reveal'}
-  <p class="mt-4 text-center text-sm text-slate-400">{t('waitStart')}</p>
-{/if}
-
-{#if isHost && phase.kind !== 'reveal' && phase.kind !== 'over'}
-  <div class="mt-6 grid grid-cols-2 gap-2">
-    <button
-      type="button"
-      class="rounded-xl bg-night-800 py-3 font-semibold"
-      onclick={() => conn.send({ t: 'pause', paused: !view.paused })}
-    >
-      {view.paused ? `▶️ ${t('resume')}` : `⏸ ${t('pause')}`}
-    </button>
-    {#if phase.kind === 'day'}
+    {/if}
+    {#if phase.kind === 'reveal' && isHost}
       <button
         type="button"
-        class="rounded-xl bg-night-800 py-3 font-semibold"
-        onclick={() => conn.send({ t: 'skip' })}
+        class="mt-6 w-full rounded-xl bg-moon px-4 py-4 text-lg font-bold text-night-950"
+        onclick={() => conn.send({ t: 'start' })}
       >
-        🗳️ {t('skipToVote')}
+        🌙 {t('startNight')}
       </button>
+    {:else if phase.kind === 'reveal'}
+      <p class="mt-4 text-center text-sm text-slate-400">{t('waitStart')}</p>
     {/if}
   </div>
-{/if}
+  <div>
+    {#if you && phase.kind !== 'reveal'}
+      <section class="mt-5">
+        {#if you.prompt.kind === 'pick'}
+          {@const prompt = you.prompt}
+          <h2 class="mb-1 text-lg font-bold">{t(pickTitle[prompt.purpose] ?? 'suspectTitle')}</h2>
+          {#if prompt.purpose === 'suspect'}
+            <p class="mb-2 text-xs text-slate-400">{t('suspectHint')}</p>
+          {/if}
+          <!-- New question → fresh picker (no stale local selection). -->
+          {#key prompt.purpose}
+            <PlayerPicker
+              options={prompt.options}
+              count={prompt.purpose === 'on-seer' ? 1 : prompt.count}
+              centerCount={prompt.centerCount}
+              centerAlternative={prompt.purpose === 'on-seer'}
+              selected={prompt.selected}
+              selectedCenter={prompt.selectedCenter}
+              locked={prompt.locked}
+              {names}
+              onSubmit={(players, center) => conn.send({ t: 'act', players, center })}
+            />
+          {/key}
+        {:else if you.prompt.kind === 'accuse'}
+          {@const prompt = you.prompt}
+          <h2 class="mb-2 text-lg font-bold">{t('accuseTitle')}</h2>
+          <ul class="grid grid-cols-2 gap-2 lg:grid-cols-3">
+            {#each prompt.options as id (id)}
+              <li>
+                <button
+                  type="button"
+                  class="min-h-14 w-full rounded-xl px-3 py-3 text-left font-semibold {prompt.yours ===
+                  id
+                    ? 'bg-wolf'
+                    : 'bg-night-800'}"
+                  onclick={() => conn.send({ t: 'accuse', target: id })}
+                >
+                  👉 {names(id)}
+                </button>
+              </li>
+            {/each}
+          </ul>
+          {#if phase.kind === 'vote'}
+            <p class="mt-3 text-center text-sm text-slate-400">
+              {t('votesProgress', { n: String(phase.voted), total: String(phase.total) })}
+            </p>
+          {/if}
+        {:else if phase.kind === 'over' && view.result}
+          <p class="text-center text-2xl font-bold">{youWon ? t('youWon') : t('youLost')}</p>
+        {/if}
+      </section>
+    {/if}
+
+    {#if view.result}
+      {@const result = view.result}
+      <section class="mt-6 overflow-hidden rounded-xl bg-night-900">
+        <table class="w-full text-sm">
+          <thead class="bg-night-800 text-left text-xs text-slate-400">
+            <tr>
+              <th class="px-3 py-2"></th><th class="px-2">{t('dealt')}</th><th class="px-2">
+                {t('final')}
+              </th><th class="px-2">🗳️</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each view.seats as seat (seat.id)}
+              {@const dead = result.deaths.includes(seat.id)}
+              {@const won = result.winningPlayers.includes(seat.id)}
+              <tr class="border-t border-night-800">
+                <td class="px-3 py-2 font-semibold {dead ? 'text-wolf line-through' : ''}">
+                  {won ? '🏆 ' : ''}{names(seat.id)}
+                </td>
+                <td class="px-2 text-slate-400">{roleName(result.original[seat.id]!)}</td>
+                <td class="px-2">
+                  {roleName(result.final[seat.id]!)}{result.final[seat.id] === 'doppelganger' &&
+                  result.doppelCopy
+                    ? ` → ${roleName(result.doppelCopy)}`
+                    : ''}
+                </td>
+                <td class="px-2 font-mono">{tally[seat.id] ?? 0}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+        <p class="border-t border-night-800 px-3 py-2 text-sm">
+          {t('centerLabel')}: {result.center.map(roleName).join(' · ')}
+        </p>
+      </section>
+    {/if}
+
+    {#if isHost && phase.kind !== 'reveal' && phase.kind !== 'over'}
+      <div class="mt-6 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          class="rounded-xl bg-night-800 py-3 font-semibold"
+          onclick={() => conn.send({ t: 'pause', paused: !view.paused })}
+        >
+          {view.paused ? `▶️ ${t('resume')}` : `⏸ ${t('pause')}`}
+        </button>
+        {#if phase.kind === 'day'}
+          <button
+            type="button"
+            class="rounded-xl bg-night-800 py-3 font-semibold"
+            onclick={() => conn.send({ t: 'skip' })}
+          >
+            🗳️ {t('skipToVote')}
+          </button>
+        {/if}
+      </div>
+    {/if}
+  </div>
+</div>

@@ -61,7 +61,7 @@
     {#each group.options as option (option.value)}
       <button
         type="button"
-        class="rounded-xl px-2 py-2.5 text-sm font-semibold {group.current === option.value
+        class="min-h-11 rounded-xl px-2 py-2.5 text-sm font-semibold {group.current === option.value
           ? 'bg-moon text-night-950'
           : 'bg-night-800'}"
         aria-pressed={group.current === option.value}

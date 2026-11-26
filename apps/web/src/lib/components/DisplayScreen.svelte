@@ -66,6 +66,14 @@
         // Joining mid-game: do not replay history. New round: speak from the start.
         lastSeq = firstLoad ? maxSeq : 0;
         spokenRound = round;
+        // Joining mid-game: show the latest line as a caption without reading it aloud.
+        if (firstLoad) {
+          const latest = [...cues]
+            .reverse()
+            .map((e) => cueText(e.cue, i18n.lang, names, play.kind === 'one-night'))
+            .find(Boolean);
+          if (latest) caption = latest;
+        }
       }
       firstLoad = false;
       for (const entry of cues) {
@@ -177,7 +185,7 @@
 </script>
 
 <div
-  class="min-h-dvh w-full bg-cover bg-center px-8 py-6"
+  class="min-h-dvh w-full bg-cover bg-center px-4 py-4 md:px-8 md:py-6 2xl:px-16 2xl:py-10"
   style:background-color="#070d17"
   style:background-image={scene
     ? `linear-gradient(rgba(7,13,23,0.35), rgba(7,13,23,0.6)), url(${scene})`
@@ -222,12 +230,16 @@
   {#if room && game}
     {#if !play}
       <!-- Lobby / manual game: show how to join -->
-      <section class="mt-10 grid grid-cols-[auto_1fr] items-center gap-12">
-        <div class="w-72 rounded-3xl bg-white p-3">{@html qr}</div>
+      <section class="mt-6 grid items-center gap-6 md:mt-10 md:grid-cols-[auto_1fr] md:gap-12">
+        <div class="mx-auto w-56 rounded-3xl bg-white p-3 md:w-72 2xl:w-96">{@html qr}</div>
         <div>
-          <h1 class="text-5xl font-bold">🐺 {t('appName')}</h1>
+          <h1 class="text-4xl font-bold md:text-5xl 2xl:text-7xl">🐺 {t('appName')}</h1>
           <p class="mt-3 text-xl text-slate-300">{t('scanToJoin')}</p>
-          <p class="mt-2 font-mono text-6xl font-bold tracking-[0.3em] text-moon">{code}</p>
+          <p
+            class="mt-2 font-mono text-5xl font-bold tracking-[0.3em] text-moon md:text-6xl 2xl:text-8xl"
+          >
+            {code}
+          </p>
           <div class="mt-3"><CopyLinkButton url={joinUrl(code)} large /></div>
           <p class="mt-6 text-lg text-slate-400">
             {players.length
@@ -251,17 +263,26 @@
       </section>
     {:else}
       <!-- Game in progress -->
-      <section class="mt-6 flex items-end justify-between">
+      <section class="mt-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 class="text-6xl font-bold">{isNight ? '🌙' : '☀️'} {phaseTitle}</h1>
-          {#if currentCall}<p class="mt-2 text-3xl text-moon">{currentCall}</p>{/if}
+          <h1 class="text-4xl font-bold md:text-6xl 2xl:text-8xl">
+            {isNight ? '🌙' : '☀️'}
+            {phaseTitle}
+          </h1>
+          {#if currentCall}<p class="mt-2 text-2xl text-moon md:text-3xl 2xl:text-5xl">
+              {currentCall}
+            </p>{/if}
           {#if play.paused}<p class="mt-2 text-2xl text-moon">⏸ {t('pausedBanner')}</p>{/if}
         </div>
         <Countdown {endsAt} serverNow={() => conn.serverNow()} big />
       </section>
 
       {#if caption}
-        <p class="mt-6 rounded-2xl bg-night-950/60 px-6 py-5 text-3xl leading-snug">🎙️ {caption}</p>
+        <p
+          class="mt-6 rounded-2xl bg-night-950/60 px-4 py-4 text-xl leading-snug md:px-6 md:py-5 md:text-3xl 2xl:text-5xl"
+        >
+          🎙️ {caption}
+        </p>
       {/if}
 
       {#if play.kind === 'classic'}
@@ -282,7 +303,9 @@
             {/if}
           </p>
         {/if}
-        <ul class="mt-8 grid grid-cols-4 gap-3 xl:grid-cols-5">
+        <ul
+          class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:text-xl"
+        >
           {#each play.seats as seat (seat.id)}
             <li
               class="rounded-2xl px-4 py-3 {seat.alive
@@ -315,7 +338,9 @@
         {/if}
         {#if play.result}
           {@const result = play.result}
-          <ul class="mt-8 grid grid-cols-4 gap-3 xl:grid-cols-5">
+          <ul
+            class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:text-xl"
+          >
             {#each play.seats as seat (seat.id)}
               {@const card = result.final[seat.id]!}
               {@const role =

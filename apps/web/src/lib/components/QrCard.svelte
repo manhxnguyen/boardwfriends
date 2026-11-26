@@ -18,7 +18,7 @@
     <CopyLinkButton {url} />
     <button
       type="button"
-      class="rounded-full bg-night-800 px-4 py-2 text-sm font-medium"
+      class="min-h-11 rounded-full bg-night-800 px-4 py-2 text-sm font-medium"
       onclick={onShare}
     >
       📤 {t('share')}

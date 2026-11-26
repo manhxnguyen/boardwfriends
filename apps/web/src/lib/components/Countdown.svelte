@@ -24,7 +24,7 @@
 {#if remaining !== null}
   <span
     class="font-mono font-bold tabular-nums {remaining <= 10_000 ? 'text-wolf' : 'text-moon'} {big
-      ? 'text-7xl'
+      ? 'text-5xl md:text-7xl 2xl:text-8xl'
       : 'text-2xl'}"
     role="timer"
   >
