@@ -18,6 +18,30 @@
   color-scheme: dark;
 }
 
+/*
+ * Day palette. The whole UI is built on the --color-night-* tokens, so redefining them here turns
+ * every screen to the day tone at once (see lib/theme.ts). Day stays darker than white so light
+ * text keeps its contrast and nobody is dazzled when playing outside at night.
+ */
+:root[data-theme='day'] {
+  --color-night-950: #123553;
+  --color-night-900: #1a4568;
+  --color-night-800: #22557d;
+  --color-night-700: #2d6792;
+  --color-night-600: #4580ab;
+}
+
+/* Smooth cross-fade only while the theme is switching (taps stay instant otherwise). */
+.theme-changing,
+.theme-changing *,
+.theme-changing *::before,
+.theme-changing *::after {
+  transition:
+    background-color 1.5s ease,
+    border-color 1.5s ease,
+    color 1.5s ease !important;
+}
+
 html,
 body {
   background: var(--color-night-950);

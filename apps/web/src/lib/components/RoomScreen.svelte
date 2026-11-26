@@ -7,6 +7,7 @@
   import { t, type MessageKey } from '../i18n.svelte.ts';
   import { rememberName, savedName } from '../identity.ts';
   import { goHome } from '../router.svelte.ts';
+  import { setTheme, themeFor } from '../theme.ts';
   import { WakeLock } from '../wakeLock.svelte.ts';
   import ClassicPlay from './ClassicPlay.svelte';
   import DeckBuilder from './DeckBuilder.svelte';
@@ -34,7 +35,11 @@
   onDestroy(() => {
     conn.dispose();
     wakeLock.dispose();
+    setTheme('night');
   });
+
+  // Day/night tone follows the game: the whole phone brightens at dawn and darkens at night.
+  $effect(() => setTheme(themeFor(conn.room?.game)));
 
   const url = $derived(joinUrl(code));
   const room = $derived(conn.room);

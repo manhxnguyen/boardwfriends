@@ -16,8 +16,8 @@ Live: **https://boardwfriends.bwf-web.workers.dev**
 | **One Night Werewolf** (One Night Ultimate Werewolf rules, 11 roles) | 3–10    | The app                                                                                    |
 
 The **narrator screen** (`/r/<CODE>/tv`, open it on the MacBook in the middle of the circle) reads every
-step aloud with the system voice ("Linh" for Vietnamese on macOS), shows the clock and who is out, and can
-optionally **listen for voice commands** ("tôi đề cử Bình", "ủng hộ", "bỏ phiếu", "tạm dừng", …).
+step aloud with the system voice ("Linh" for Vietnamese on macOS), shows the clock and who is out, and
+switches the whole screen between a night and a day tone with the game.
 
 ## Requirements
 
@@ -73,7 +73,10 @@ The narrator screen reads with, in order of preference:
 2. A voice installed on the device for the right language (Edge "Natural" voices, macOS "Enhanced").
 3. Never a voice of another language: if none is installed, the screen explains how to add one.
 
-### Voice commands (experimental)
+### Voice commands (paused)
+
+Listening to players is switched off for now (`VOICE_COMMANDS` in `apps/web/src/lib/features.ts`);
+narration is unaffected. When it was on:
 
 Enable “MacBook nghe lệnh giọng nói” in the room settings, then press 🎤 on the narrator screen.
 Works in Chrome and Safari on macOS. **Privacy:** Chrome sends the audio to Google for recognition, Safari

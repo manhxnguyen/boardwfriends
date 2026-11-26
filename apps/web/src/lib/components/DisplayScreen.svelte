@@ -8,7 +8,9 @@
   import { ONE_NIGHT_ICON, ONE_NIGHT_TEXT } from '../content/one-night-roles.ts';
   import { ROLE_ICON, ROLE_TEXT, TEAM_TEXT } from '../content/roles.ts';
   import { i18n, t } from '../i18n.svelte.ts';
+  import { VOICE_COMMANDS } from '../features.ts';
   import { Listener } from '../listener.svelte.ts';
+  import { setTheme, themeFor } from '../theme.ts';
   import { CLOUD_VOICE, Narrator } from '../narrator.svelte.ts';
   import { qrSvg } from '../qr.ts';
   import { parseVoiceCommand, type VoiceCommand } from '../voice-commands.ts';
@@ -42,7 +44,10 @@
   const players = $derived(room?.lobby.players ?? []);
   const names = (id: string) => players.find((p) => p.id === id)?.name ?? '?';
   const oneNight = $derived(play?.kind === 'one-night');
-  const voiceAllowed = $derived(game?.setup?.voice === true && game.phase === 'playing');
+  const voiceAllowed = $derived(
+    VOICE_COMMANDS && game?.setup?.voice === true && game.phase === 'playing',
+  );
+  $effect(() => setTheme(themeFor(game)));
   const qr = $derived(qrSvg(joinUrl(code)));
 
   // ---------------------------------------------------------------- narration

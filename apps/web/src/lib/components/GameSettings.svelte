@@ -1,5 +1,6 @@
 <script lang="ts">
   import { DAY_MINUTES_MAX, DAY_MINUTES_MIN, type SetupView } from '@bwf/protocol';
+  import { VOICE_COMMANDS } from '../features.ts';
   import { t, type MessageKey } from '../i18n.svelte.ts';
 
   /** Host-only game settings: which game, who moderates, reveal rule, day length, voice. */
@@ -127,17 +128,19 @@
       />
     </label>
 
-    <label class="flex items-start justify-between gap-3">
-      <span>
-        <span class="block text-sm font-semibold">{t('voiceLabel')}</span>
-        <span class="block text-xs text-slate-400">{t('voiceHint')}</span>
-      </span>
-      <input
-        type="checkbox"
-        class="mt-1 size-6 shrink-0 accent-moon"
-        checked={setup.voice}
-        onchange={(e) => set({ voice: e.currentTarget.checked })}
-      />
-    </label>
+    {#if VOICE_COMMANDS}
+      <label class="flex items-start justify-between gap-3">
+        <span>
+          <span class="block text-sm font-semibold">{t('voiceLabel')}</span>
+          <span class="block text-xs text-slate-400">{t('voiceHint')}</span>
+        </span>
+        <input
+          type="checkbox"
+          class="mt-1 size-6 shrink-0 accent-moon"
+          checked={setup.voice}
+          onchange={(e) => set({ voice: e.currentTarget.checked })}
+        />
+      </label>
+    {/if}
   {/if}
 </section>
