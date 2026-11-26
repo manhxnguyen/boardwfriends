@@ -1,7 +1,7 @@
 # boardwfriends
 
 Board games with friends: a mobile-first web app for playing **Werewolf** in person, one phone each,
-with a laptop as the narrator. See [plan.md](plan.md) for the roadmap and [docs/rules](docs/rules) for
+with a laptop, PC or TV with speakers as the narrator. See [plan.md](plan.md) for the roadmap and [docs/rules](docs/rules) for
 the cited rules.
 
 Idea, product direction and decisions: Manh Nguyen. Implementation assisted by Claude.
@@ -10,12 +10,12 @@ Live: **https://boardwfriends.bwf-web.workers.dev**
 
 ## Game modes
 
-| Mode                                                                 | Players | Who moderates                                                                              |
-| -------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------ |
-| **Classic Werewolf** (Ultimate Werewolf rules, 13 roles)             | 3–20    | The app (narrator screen on a laptop) **or** a person (the app deals and shows the script) |
-| **One Night Werewolf** (One Night Ultimate Werewolf rules, 11 roles) | 3–10    | The app                                                                                    |
+| Mode                                                                 | Players | Who moderates                                                                                        |
+| -------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
+| **Classic Werewolf** (Ultimate Werewolf rules, 13 roles)             | 3–20    | The app (narrator screen on a laptop, PC or TV) **or** a person (the app deals and shows the script) |
+| **One Night Werewolf** (One Night Ultimate Werewolf rules, 11 roles) | 3–10    | The app                                                                                              |
 
-The **narrator screen** (`/r/<CODE>/tv`, open it on the MacBook in the middle of the circle) reads every
+The **narrator screen** (`/r/<CODE>/tv`, open it on a laptop, PC with speakers or Android TV that everyone can see and hear) reads every
 step aloud with the system voice ("Linh" for Vietnamese on macOS), shows the clock and who is out, and
 switches the whole screen between a night and a day tone with the game.
 
@@ -36,12 +36,12 @@ pnpm dev
 
 ### At the table (recommended)
 
-1. On the MacBook in the middle of the circle, open the site and press **“Tạo phòng trên màn hình này”**
+1. On the narrator screen (laptop, PC with speakers or Android TV), open the site and press **“Tạo phòng trên màn hình này”**
    (Create a room on this screen) at the bottom of the home page. It shows a big QR code and room code.
 2. Everyone scans the QR code with their phone. The first phone to join becomes the host and picks the deck.
-3. Press **“Bật âm thanh”** on the MacBook so it can read the narration.
+3. Press **“Bật âm thanh”** on the narrator screen so it can read the narration.
 
-If a phone already created the room, the MacBook can open it with **“Màn hình dẫn truyện” → room code → Mở**.
+If a phone already created the room, the narrator screen can open it with **“Màn hình dẫn truyện” → room code → Mở**.
 
 ### Playing on real phones (same wifi)
 
