@@ -1,128 +1,234 @@
 # boardwfriends
 
-Board games with friends: a mobile-first web app for playing **Werewolf** in person, one phone each,
-with a laptop, PC or TV with speakers as the narrator. See [plan.md](plan.md) for the roadmap and [docs/rules](docs/rules) for
-the cited rules.
+**[Tiếng Việt](#tiếng-việt)** · **[English](#english)**
 
+Chơi thử / Play now: **<https://boardwfriends.bwf-web.workers.dev>**
+
+Ý tưởng, định hướng sản phẩm và quyết định: Manh Nguyen. Lập trình với sự hỗ trợ của Claude.
 Idea, product direction and decisions: Manh Nguyen. Implementation assisted by Claude.
 
-Live: **https://boardwfriends.bwf-web.workers.dev**
+---
 
-## Game modes
+## Tiếng Việt
 
-| Mode                                                                 | Players | Who moderates                                                                                        |
-| -------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
-| **Classic Werewolf** (Ultimate Werewolf rules, 13 roles)             | 3–20    | The app (narrator screen on a laptop, PC or TV) **or** a person (the app deals and shows the script) |
-| **One Night Werewolf** (One Night Ultimate Werewolf rules, 11 roles) | 3–10    | The app                                                                                              |
+Web app chơi **Ma Sói** trực tiếp cùng bạn bè: mỗi người dùng điện thoại của mình, còn một laptop,
+PC có loa hoặc TV Android làm **người dẫn truyện** (đọc lời dẫn, hiện đồng hồ và mã QR). Giao diện
+mặc định tiếng Việt, đổi được sang tiếng Anh.
 
-The **narrator screen** (`/r/<CODE>/tv`, open it on a laptop, PC with speakers or Android TV that everyone can see and hear) reads every
-step aloud with the system voice ("Linh" for Vietnamese on macOS), shows the clock and who is out, and
-switches the whole screen between a night and a day tone with the game.
+### Chế độ chơi
 
-## Requirements
+| Chế độ                                                        | Số người | Ai dẫn truyện                                                                    |
+| ------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------- |
+| **Ma Sói cổ điển** (luật Ultimate Werewolf, 13 vai)           | 3–20     | App (màn hình dẫn truyện) **hoặc** một người dẫn (app chia bài và hiện kịch bản) |
+| **Ma Sói một đêm** (luật One Night Ultimate Werewolf, 11 vai) | 3–10     | App                                                                              |
 
-- Node.js ≥ 22 (developed on 26)
-- pnpm ≥ 10 (`corepack enable` or `npm i -g pnpm`)
+Luật kèm trích dẫn và các điểm app tự quyết định: [docs/rules](docs/rules).
 
-## Getting started
+### Cần chuẩn bị
+
+- Mỗi người một điện thoại, chung một mạng wifi (hoặc cùng có internet).
+- Một **màn hình dẫn truyện**: laptop, PC hoặc TV Android **có loa** (loa sẵn hay loa ngoài đều
+  được), đặt ở chỗ cả nhóm cùng thấy và nghe rõ.
+
+### Cách chơi (có internet)
+
+Không cần cài gì, chỉ cần mở trang web.
+
+1. Trên màn hình dẫn truyện, mở **<https://boardwfriends.bwf-web.workers.dev>**, kéo xuống cuối trang
+   chủ và bấm **“Tạo phòng trên màn hình này”**. Màn hình hiện mã QR lớn và mã phòng.
+2. Mọi người quét mã QR bằng điện thoại. Người vào đầu tiên là **chủ phòng**, chọn bộ bài và bắt đầu.
+3. Bấm **“🔊 Bật âm thanh”** trên màn hình dẫn truyện (trình duyệt chỉ cho phát tiếng sau một cú bấm).
+
+Nếu phòng đã được tạo trên điện thoại, màn hình dẫn truyện vào bằng **“Màn hình dẫn truyện” → nhập
+mã phòng → Mở**, hoặc mở link dẫn truyện hiện trong phòng.
+
+### Chơi không cần internet (máy chủ trong mạng nhà)
+
+Một máy Mac (hoặc PC) chạy máy chủ; điện thoại chỉ cần chung wifi với máy đó.
+
+```sh
+pnpm install      # lần đầu
+pnpm lan          # build rồi chạy máy chủ ở cổng 8080
+```
+
+- Điện thoại mở địa chỉ in ở dòng “Phones (same wifi)” (mã QR trên màn hình cũng trỏ tới đó).
+- Màn hình dẫn truyện trên chính máy đó mở <http://localhost:8080>.
+- Thêm `--data ./rooms` (ví dụ `pnpm lan:start -- --data ./rooms`) để giữ phòng khi khởi động lại.
+- macOS có thể hỏi cho phép `node` nhận kết nối: chọn cho phép.
+
+### Giọng đọc
+
+Màn hình dẫn truyện có ô chọn **“Giọng đọc”**. Mặc định app chọn theo thứ tự:
+
+1. **[VieNeu-TTS](https://github.com/pnnbao97/VieNeu-TTS)**: giọng Việt tự cài, chạy offline,
+   **chỉ có khi chơi bằng máy chủ trong mạng nhà**. Có 25 giọng, mặc định “Ngọc Linh”. Người dẫn
+   có cảm xúc: hắng giọng khi bắt đầu và khi bỏ phiếu, thở dài khi có người chết, cười khi một phe
+   thắng (tính năng thử nghiệm của VieNeu). Mỗi câu mất khoảng 0,5 giây trên Mac M-series, câu sau
+   được tạo sẵn trong lúc đọc câu trước. VieNeu chỉ đọc tiếng Việt; câu tiếng Anh dùng giọng khác.
+
+   ```sh
+   # Cửa sổ 1: trong thư mục VieNeu-TTS (xem hướng dẫn cài trong repo của VieNeu)
+   uv run python -m apps.openai_speech
+   # Cửa sổ 2: trong thư mục boardwfriends
+   VIENEU_URL=http://127.0.0.1:8000 pnpm lan
+   ```
+
+   VieNeu chạy trên một PC khác trong mạng: chạy nó với `HOST=0.0.0.0`, rồi đặt
+   `VIENEU_URL=http://<IP của PC>:8000`. Nếu VieNeu đặt `VIENEU_API_KEY`, đặt cùng biến đó khi chạy
+   `pnpm lan`.
+
+2. **Giọng Google** (`vi-VN-Neural2-A`): có sẵn trên bản Cloudflare. Với máy chủ trong mạng nhà, cần
+   internet và chạy `GOOGLE_TTS_API_KEY=… pnpm lan`.
+3. **Giọng có sẵn trên máy** đúng ngôn ngữ (giọng “Natural” của Edge, giọng “Nâng cao” của macOS).
+4. App không bao giờ đọc tiếng Việt bằng giọng nước ngoài: nếu máy không có giọng phù hợp, màn hình
+   chỉ cách cài thêm.
+
+Khi một giọng gặp lỗi (VieNeu tắt, mất mạng), app tự chuyển sang giọng kế tiếp và hiện cảnh báo;
+chọn lại giọng để thử lại. Phụ đề trên điện thoại không bao giờ hiện các thẻ cảm xúc.
+
+### Lệnh giọng nói (đang tạm tắt)
+
+Tính năng màn hình dẫn truyện nghe người chơi nói (“tôi đề cử Bình”, “bỏ phiếu”…) đang tắt
+(`VOICE_COMMANDS` trong `apps/web/src/lib/features.ts`). Phần đọc lời dẫn không bị ảnh hưởng.
+
+### Dành cho lập trình viên
+
+Yêu cầu: Node.js ≥ 22, pnpm ≥ 10 (`corepack enable` hoặc `npm i -g pnpm`).
 
 ```sh
 pnpm install
-pnpm dev
+pnpm dev          # web + Cloudflare Worker + Durable Objects chạy local, cổng 5173
 ```
 
-`pnpm dev` runs the web app **and** the Cloudflare Worker + Durable Objects locally (via
-`@cloudflare/vite-plugin`) on port 5173, reachable from your local network.
+`pnpm dev` cũng mở cho mạng nhà: điện thoại chung wifi quét mã QR là vào được (mã QR trỏ tới địa
+chỉ mạng của máy đang chạy). Danh sách lệnh, cấu trúc thư mục và tài liệu: xem
+[phần tiếng Anh bên dưới](#for-developers).
 
-### At the table (recommended)
+---
 
-1. On the narrator screen (laptop, PC with speakers or Android TV), open the site and press **“Tạo phòng trên màn hình này”**
-   (Create a room on this screen) at the bottom of the home page. It shows a big QR code and room code.
-2. Everyone scans the QR code with their phone. The first phone to join becomes the host and picks the deck.
-3. Press **“Bật âm thanh”** on the narrator screen so it can read the narration.
+## English
 
-If a phone already created the room, the narrator screen can open it with **“Màn hình dẫn truyện” → room code → Mở**.
+A web app for playing **Werewolf** in person with friends: everyone uses their own phone, and a
+laptop, PC with speakers or Android TV is the **narrator screen** (reads the narration, shows the
+clock and the QR code). The interface is Vietnamese by default and can be switched to English.
 
-### Playing on real phones (same wifi)
+### Game modes
 
-1. On the MacBook run `pnpm dev` and open <http://localhost:5173>. Create a room.
-2. Phones on the same wifi scan the QR code (it points at the MacBook's LAN address).
-3. For an app-moderated game, open the narrator link shown in the room on the MacBook and press
-   **“Bật âm thanh”** (browsers only allow speech after a click).
+| Mode                                                                 | Players | Who moderates                                                                  |
+| -------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------ |
+| **Classic Werewolf** (Ultimate Werewolf rules, 13 roles)             | 3–20    | The app (narrator screen) **or** a person (the app deals and shows the script) |
+| **One Night Werewolf** (One Night Ultimate Werewolf rules, 11 roles) | 3–10    | The app                                                                        |
 
-macOS may ask to allow incoming connections for `node`: accept it.
+Rules with citations and the app's own decisions: [docs/rules](docs/rules).
+
+### What you need
+
+- One phone per player, all on the same wifi (or all online).
+- One **narrator screen**: a laptop, PC or Android TV **with speakers** (built-in or external),
+  placed where everyone can see and hear it.
+
+### How to play (online)
+
+Nothing to install: just open the site.
+
+1. On the narrator screen, open **<https://boardwfriends.bwf-web.workers.dev>**, scroll to the bottom of
+   the home page and press **“Tạo phòng trên màn hình này”** (Create a room on this screen). It shows
+   a big QR code and the room code.
+2. Everyone scans the QR code with their phone. The first to join is the **host**, who picks the deck
+   and starts.
+3. Press **“🔊 Bật âm thanh”** (Enable sound) on the narrator screen; browsers only play sound after a
+   click.
+
+If a phone created the room, the narrator screen joins with **“Màn hình dẫn truyện” (Narrator screen)
+→ room code → Mở (Open)**, or by opening the narrator link shown in the room.
 
 ### Playing without internet (LAN server)
 
+One Mac (or PC) runs the server; phones only need to be on the same wifi.
+
 ```sh
+pnpm install      # first time
 pnpm lan          # builds everything, then serves the app on port 8080
 ```
 
-- Phones open the address printed as “Phones (same wifi)”; the MacBook opens <http://localhost:8080>
-  (the microphone only works on `localhost` or HTTPS).
+- Phones open the address printed as “Phones (same wifi)” (the on-screen QR code points there too).
+- The narrator screen on that same machine opens <http://localhost:8080>.
 - Add `--data ./rooms` (e.g. `pnpm lan:start -- --data ./rooms`) to keep rooms across restarts.
+- macOS may ask to allow incoming connections for `node`: accept.
 
 ### Narration voice
 
-The narrator screen has a **Giọng đọc** dropdown. By default it reads with, in order of preference:
+The narrator screen has a **“Giọng đọc”** (Voice) dropdown. By default the app picks, in order:
 
-1. **[VieNeu-TTS](https://github.com/pnnbao97/VieNeu-TTS)** (self-hosted, offline, LAN server only).
-   The narrator shows feelings with VieNeu's emotion tags: it clears its throat before the game
-   and votes, sighs at deaths and laughs when a side wins. Other voices and captions get the text
-   without tags. Default voice: “Ngọc Linh”. VieNeu reads Vietnamese only; English lines use Google
-   or the device voice. Each sentence takes about 0.5 s on an M-series Mac, and the next sentence is
-   generated while the current one plays.
+1. **[VieNeu-TTS](https://github.com/pnnbao97/VieNeu-TTS)**: a self-hosted Vietnamese voice that
+   works offline, **LAN server only**. 25 voices, default “Ngọc Linh”. The narrator shows feelings:
+   it clears its throat at the start and before votes, sighs at deaths and laughs when a side wins
+   (an experimental VieNeu feature). About 0.5 s per sentence on an M-series Mac, and the next
+   sentence is generated while the current one plays. VieNeu reads Vietnamese only; English lines
+   use another voice.
 
    ```sh
-   # Terminal 1: in the VieNeu-TTS folder (HOST=0.0.0.0 when it runs on another PC)
+   # Terminal 1: in the VieNeu-TTS folder (see the install guide in the VieNeu repo)
    uv run python -m apps.openai_speech
-   # Terminal 2: here
-   VIENEU_URL=http://127.0.0.1:8000 pnpm lan   # optional VIENEU_API_KEY=…
+   # Terminal 2: in the boardwfriends folder
+   VIENEU_URL=http://127.0.0.1:8000 pnpm lan
    ```
 
-2. **Google Cloud Text-to-Speech** (`vi-VN-Neural2-A`, the clearest Vietnamese) when the server has an
-   API key: `pnpm --filter @bwf/worker exec wrangler secret put GOOGLE_TTS_API_KEY` (Cloudflare) or
-   `GOOGLE_TTS_API_KEY=… pnpm lan:start` (LAN, needs internet). Optional `GOOGLE_TTS_VOICE_VI` /
-   `GOOGLE_TTS_VOICE_EN` pick other voices. Free tier: 1M characters/month for Neural2.
-3. A voice installed on the device for the right language (Edge "Natural" voices, macOS "Enhanced").
-4. Never a voice of another language: if none is installed, the screen explains how to add one.
+   VieNeu on another PC of the network: run it with `HOST=0.0.0.0` and set
+   `VIENEU_URL=http://<PC address>:8000`. If VieNeu uses `VIENEU_API_KEY`, set the same variable
+   for `pnpm lan`.
+
+2. **Google voice** (`vi-VN-Neural2-A`): available on the Cloudflare deployment. On the LAN server it
+   needs internet and `GOOGLE_TTS_API_KEY=… pnpm lan`. Optional `GOOGLE_TTS_VOICE_VI` /
+   `GOOGLE_TTS_VOICE_EN` pick other voices.
+3. **A voice installed on the device** for the right language (Edge “Natural”, macOS “Enhanced”).
+4. Never a voice of another language: if none fits, the screen explains how to install one.
+
+When a voice fails (VieNeu stopped, no internet), the app moves to the next one and shows a warning;
+pick the voice again to retry. Phone captions never show the emotion tags.
 
 ### Voice commands (paused)
 
-Listening to players is switched off for now (`VOICE_COMMANDS` in `apps/web/src/lib/features.ts`);
-narration is unaffected. When it was on:
+Listening to players (“I nominate Binh”, “vote”…) is switched off for now (`VOICE_COMMANDS` in
+`apps/web/src/lib/features.ts`). Narration is unaffected. When on, Chrome sends the audio to Google
+and Safari to Apple for recognition; this app records nothing.
 
-Enable “MacBook nghe lệnh giọng nói” in the room settings, then press 🎤 on the narrator screen.
-Works in Chrome and Safari on macOS. **Privacy:** Chrome sends the audio to Google for recognition, Safari
-to Apple; nothing is recorded by this app, and listening stops when you press 🎤 again.
+### For developers
 
-## Scripts
+Requirements: Node.js ≥ 22 (developed on 26), pnpm ≥ 10 (`corepack enable` or `npm i -g pnpm`).
 
-| Command            | What it does                                               |
-| ------------------ | ---------------------------------------------------------- |
-| `pnpm dev`         | Local dev server (web + Worker + Durable Objects)          |
-| `pnpm test`        | Unit tests (engine, protocol, server core, voice parser)   |
-| `pnpm typecheck`   | TypeScript + Svelte checks for every package               |
-| `pnpm smoke [url]` | Multi-client WebSocket smoke test against a running server |
-| `pnpm lan`         | Build and run the offline LAN server                       |
-| `pnpm format`      | Prettier                                                   |
-| `pnpm build`       | Production build                                           |
-| `pnpm cf:deploy`   | Build and deploy to Cloudflare (needs `wrangler login`)    |
+```sh
+pnpm install
+pnpm dev          # web app + Cloudflare Worker + Durable Objects locally on port 5173
+```
 
-## Layout
+`pnpm dev` is reachable from the local network: phones on the same wifi can scan the QR code (it
+points at the machine's network address).
+
+| Command            | What it does                                                  |
+| ------------------ | ------------------------------------------------------------- |
+| `pnpm dev`         | Local dev server (web + Worker + Durable Objects)             |
+| `pnpm test`        | Unit tests (engine, protocol, server core, narration, voices) |
+| `pnpm typecheck`   | TypeScript + Svelte checks for every package                  |
+| `pnpm smoke [url]` | Multi-client WebSocket smoke test against a running server    |
+| `pnpm lan`         | Build and run the offline LAN server                          |
+| `pnpm format`      | Prettier                                                      |
+| `pnpm build`       | Production build                                              |
+| `pnpm cf:deploy`   | Build and deploy to Cloudflare (needs `wrangler login`)       |
+
+Google voice on Cloudflare: `pnpm --filter @bwf/worker exec wrangler secret put GOOGLE_TTS_API_KEY`.
 
 ```text
 apps/web            Svelte 5 PWA: player screens + narrator screen
 apps/worker         Cloudflare Worker + Room Durable Object (adapter)
-apps/lan-server     Node offline server (adapter)
-packages/server     RoomCore: transport-agnostic room server
+apps/lan-server     Node offline server (adapter), VieNeu / Google voice proxy
+packages/server     RoomCore: transport-agnostic room server, narration voices
 packages/engine     Pure game logic (no I/O), fully unit tested
 packages/protocol   Client ↔ server message types and validation
 docs/rules          Game rules with citations and app decisions
 ```
 
-Card art: drop images named `role-<id>.png` into `apps/web/src/assets/art/` (see
-[docs/art-spec.md](docs/art-spec.md)); they replace the emoji placeholders automatically.
-
-Architecture and coding rules: [architecture_guidelines.md](architecture_guidelines.md),
-[instructions.md](instructions.md).
+- Card art: images named `role-<id>.png` in `apps/web/src/assets/art/` replace the emoji
+  placeholders (see [docs/art-spec.md](docs/art-spec.md)).
+- Roadmap: [plan.md](plan.md). Architecture and coding rules:
+  [architecture_guidelines.md](architecture_guidelines.md), [instructions.md](instructions.md).
