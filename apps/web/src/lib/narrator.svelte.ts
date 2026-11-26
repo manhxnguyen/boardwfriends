@@ -5,6 +5,9 @@ import { serverInfo } from './server-info.svelte.ts';
 import { load, save } from './storage.ts';
 
 const VOICE_KEY = 'bwf.voice';
+const LOCAL_KEY = 'bwf.localVoice';
+/** `pnpm voice` on the narrator's own computer (option B); localhost is allowed from https. */
+export const LOCAL_BRIDGE = 'http://localhost:8090';
 /** Special voice id for the cloud voice (Google Cloud TTS through our server). */
 export const CLOUD_VOICE = 'cloud:google';
 /** Prefix of VieNeu-TTS voices (self-hosted on the local network, through the LAN server). */
@@ -51,6 +54,14 @@ export class Narrator {
   googleAvailable = $state(false);
   /** The VieNeu server stopped answering; Google or the device voice is used meanwhile. */
   vieneuError = $state(false);
+  /** The server offers VieNeu itself (LAN server, or the Worker through a tunnel). */
+  serverVieneu = $state(false);
+  /** Use VieNeu through the voice bridge on this computer (opt-in: the browser asks permission). */
+  localVoice = $state(load(LOCAL_KEY) === '1');
+  /** The bridge did not answer. */
+  localError = $state(false);
+  /** Where VieNeu audio comes from: '' (our server) or the local bridge. */
+  #vieneuBase = '';
 
   #audio: HTMLAudioElement | null = null;
   #queue: QueueItem[] = [];
@@ -77,7 +88,33 @@ export class Narrator {
     } catch {
       // Older server: only knows whether the Google voice exists.
       this.googleAvailable = serverInfo.tts;
+      this.vieneuVoices = [];
     }
+    this.serverVieneu = this.vieneuVoices.length > 0;
+    this.#vieneuBase = '';
+    if (!this.serverVieneu && this.localVoice) await this.#loadLocalVoices();
+  }
+
+  async #loadLocalVoices(): Promise<void> {
+    try {
+      const res = await fetch(`${LOCAL_BRIDGE}/api/tts/voices`);
+      if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as TtsVoicesResponse;
+      this.vieneuVoices = Array.isArray(data.vieneu) ? data.vieneu : [];
+      this.#vieneuBase = LOCAL_BRIDGE;
+      this.localError = this.vieneuVoices.length === 0;
+      this.vieneuError = false;
+    } catch {
+      this.localError = true;
+    }
+  }
+
+  /** Turns the local voice bridge on or off (from a click, so the permission prompt is expected). */
+  async setLocalVoice(on: boolean): Promise<void> {
+    this.localVoice = on;
+    this.localError = false;
+    save(LOCAL_KEY, on ? '1' : '0');
+    await this.loadServerVoices();
   }
 
   /** Google voice available on this server. */
@@ -211,7 +248,8 @@ export class Narrator {
       params.set('text', plainText(text));
     }
     try {
-      const res = await fetch(`/api/tts?${params}`);
+      const base = engine.kind === 'vieneu' ? this.#vieneuBase : '';
+      const res = await fetch(`${base}/api/tts?${params}`);
       if (!res.ok) return null;
       return URL.createObjectURL(await res.blob());
     } catch {

@@ -422,6 +422,22 @@
     >
       🔁 {t('repeat')}
     </button>
+    {#if !narrator.serverVieneu}
+      <button
+        type="button"
+        class="rounded-full px-3 py-1.5 {narrator.localVoice
+          ? 'bg-moon/20 text-moon'
+          : 'bg-night-800'}"
+        aria-pressed={narrator.localVoice}
+        title={t('localVoiceHint')}
+        onclick={() => narrator.setLocalVoice(!narrator.localVoice)}
+      >
+        🖥️ {t('localVoice')}
+      </button>
+    {/if}
+    {#if narrator.localVoice && narrator.localError}
+      <p class="w-full text-xs text-moon">⚠️ {t('localVoiceError')}</p>
+    {/if}
     {#if narrator.vieneuError}
       <p class="w-full text-xs text-moon">⚠️ {t('voiceVieneuError')}</p>
     {/if}

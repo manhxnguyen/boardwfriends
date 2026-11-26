@@ -8,6 +8,7 @@ import {
   TTS_MAX_CHARS,
   parseTtsRequest,
   stripEmotionCues,
+  pcmToWav,
   type Conn,
   type ConnData,
   type RoomHost,
@@ -234,5 +235,16 @@ describe('parseTtsRequest', () => {
 describe('stripEmotionCues', () => {
   it('removes the tags only the VieNeu voice understands', () => {
     expect(stripEmotionCues('[thở dài] Trời sáng. [cười] Hết.')).toBe('Trời sáng. Hết.');
+  });
+});
+
+describe('pcmToWav', () => {
+  it('writes a 44-byte header with the real length', () => {
+    const wav = new DataView(pcmToWav(new Uint8Array(480), 24_000));
+    const text = (at: number) => String.fromCharCode(...new Uint8Array(wav.buffer, at, 4));
+    expect(wav.byteLength).toBe(524);
+    expect([text(0), text(8), text(12), text(36)]).toEqual(['RIFF', 'WAVE', 'fmt ', 'data']);
+    expect(wav.getUint32(24, true)).toBe(24_000);
+    expect(wav.getUint32(40, true)).toBe(480);
   });
 });

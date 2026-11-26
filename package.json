@@ -17,6 +17,8 @@
     "smoke": "node scripts/smoke.mjs",
     "lan": "pnpm build && pnpm --filter @bwf/lan-server build && node apps/lan-server/dist/server.mjs",
     "lan:start": "node apps/lan-server/dist/server.mjs",
+    "voice": "pnpm --filter @bwf/lan-server build && node apps/lan-server/dist/voice.mjs",
+    "tunnel": "node scripts/tunnel.mjs",
     "cf:deploy": "pnpm --filter @bwf/web run cf:deploy"
   },
   "devDependencies": {

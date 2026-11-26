@@ -119,7 +119,10 @@ function vieneuHeaders(config: VieneuConfig): Record<string, string> {
   return config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {};
 }
 
-/** Synthesizes one line (emotion cues kept) and returns WAV bytes (48 kHz mono). */
+/** Sample rate asked from VieNeu: half its native 48 kHz, plenty for speech and half the bytes. */
+export const VIENEU_SAMPLE_RATE = 24_000;
+
+/** Synthesizes one line (emotion cues kept) and returns WAV bytes (24 kHz, 16-bit mono). */
 export async function synthesizeVieneu(
   config: VieneuConfig,
   voice: string,
@@ -129,11 +132,42 @@ export async function synthesizeVieneu(
   const res = await fetch(`${config.url.replace(/\/$/, '')}/v1/audio/speech`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...vieneuHeaders(config) },
-    body: JSON.stringify({ model: 'vieneu-v3-turbo', voice, input: text, response_format: 'wav' }),
+    // Raw PCM so we can write a WAV header with the real length (VieNeu's streamed WAV has none).
+    body: JSON.stringify({
+      model: 'vieneu-v3-turbo',
+      voice,
+      input: text,
+      response_format: 'pcm',
+      sample_rate: VIENEU_SAMPLE_RATE,
+    }),
     signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`vieneu_${res.status}`);
-  return res.arrayBuffer();
+  return pcmToWav(new Uint8Array(await res.arrayBuffer()), VIENEU_SAMPLE_RATE);
+}
+
+/** Wraps 16-bit little-endian mono PCM in a 44-byte WAV header. */
+export function pcmToWav(pcm: Uint8Array, sampleRate: number): ArrayBuffer {
+  const out = new ArrayBuffer(44 + pcm.byteLength);
+  const v = new DataView(out);
+  const ascii = (at: number, s: string) => {
+    for (let i = 0; i < s.length; i++) v.setUint8(at + i, s.charCodeAt(i));
+  };
+  ascii(0, 'RIFF');
+  v.setUint32(4, 36 + pcm.byteLength, true);
+  ascii(8, 'WAVE');
+  ascii(12, 'fmt ');
+  v.setUint32(16, 16, true); // fmt chunk size
+  v.setUint16(20, 1, true); // PCM
+  v.setUint16(22, 1, true); // mono
+  v.setUint32(24, sampleRate, true);
+  v.setUint32(28, sampleRate * 2, true); // byte rate
+  v.setUint16(32, 2, true); // block align
+  v.setUint16(34, 16, true); // bits per sample
+  ascii(36, 'data');
+  v.setUint32(40, pcm.byteLength, true);
+  new Uint8Array(out, 44).set(pcm);
+  return out;
 }
 
 /** Preset voices offered by the VieNeu server (featured first, as the server orders them). */

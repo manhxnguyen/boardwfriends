@@ -173,7 +173,12 @@ export const playVi = {
   repeat: 'Đọc lại',
   voiceCloud: 'Giọng Google (đám mây, rõ nhất)',
   voiceNone: 'Máy này không có giọng phù hợp',
-  voiceVieneu: 'VieNeu (máy chủ trong mạng, có cảm xúc)',
+  voiceVieneu: 'VieNeu (có cảm xúc)',
+  localVoice: 'VieNeu trên máy này',
+  localVoiceHint:
+    'Dùng VieNeu chạy trên chính máy này (lệnh “pnpm voice”). Trình duyệt có thể hỏi quyền truy cập mạng nội bộ: hãy cho phép.',
+  localVoiceError:
+    'Không thấy VieNeu trên máy này. Hãy chạy VieNeu và “pnpm voice” (xem README), cho phép trình duyệt truy cập mạng nội bộ, rồi bấm lại nút.',
   voiceDevice: 'Giọng của máy này',
   voiceVieneuError:
     'Không gọi được VieNeu (máy chủ giọng đọc đã tắt?). Đang dùng giọng dự phòng; chọn lại giọng để thử lại.',
@@ -361,7 +366,12 @@ export const playEn: Record<PlayKey, string> = {
   repeat: 'Repeat',
   voiceCloud: 'Google voice (cloud, clearest)',
   voiceNone: 'No suitable voice on this device',
-  voiceVieneu: 'VieNeu (local server, expressive)',
+  voiceVieneu: 'VieNeu (expressive)',
+  localVoice: 'VieNeu on this computer',
+  localVoiceHint:
+    'Use VieNeu running on this very computer (“pnpm voice”). The browser may ask for local network access: allow it.',
+  localVoiceError:
+    'VieNeu was not found on this computer. Run VieNeu and “pnpm voice” (see the README), allow local network access, then press the button again.',
   voiceDevice: 'This device’s voices',
   voiceVieneuError:
     'VieNeu is not answering (is the voice server off?). Using a backup voice; pick the voice again to retry.',
