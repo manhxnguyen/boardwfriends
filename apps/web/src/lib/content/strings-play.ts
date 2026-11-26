@@ -24,10 +24,10 @@ export const playVi = {
     'Màn hình dẫn truyện nghe các câu như “tôi đề cử Bình”, “ủng hộ”, “bỏ phiếu”, “tạm dừng”.',
   narrator: 'Màn hình dẫn truyện',
   narratorHint:
-    'Trên MacBook: mở trang web này, chọn “Màn hình dẫn truyện” ở cuối trang chủ và nhập mã phòng {code}. Hoặc mở thẳng link dưới đây.',
-  tvTitle: 'Màn hình dẫn truyện (MacBook)',
+    'Trên laptop hoặc TV Android: mở trang web này, chọn “Màn hình dẫn truyện” ở cuối trang chủ và nhập mã phòng {code}. Hoặc mở thẳng link dưới đây.',
+  tvTitle: 'Màn hình dẫn truyện (laptop / TV)',
   tvHint:
-    'Dùng máy này làm người dẫn đặt giữa vòng tròn: hiện mã QR để mọi người vào, đọc lời dẫn và hiện đồng hồ. Người đầu tiên vào phòng bằng điện thoại sẽ là chủ phòng.',
+    'Đặt laptop ở giữa vòng tròn, hoặc mở trên TV Android cho cả nhóm cùng xem: màn hình hiện mã QR để mọi người vào, đọc lời dẫn qua loa và hiện đồng hồ. Trên TV, bấm “Tạo phòng trên màn hình này” để khỏi gõ mã bằng điều khiển. Người đầu tiên vào phòng bằng điện thoại sẽ là chủ phòng.',
   tvCreate: 'Tạo phòng trên màn hình này',
   tvOpen: 'Mở',
   narratorConnected: '{n} màn hình đang kết nối',
@@ -219,10 +219,10 @@ export const playEn: Record<PlayKey, string> = {
   voiceHint: 'The narrator screen listens for “I nominate Binh”, “second”, “vote”, “pause”.',
   narrator: 'Narrator screen',
   narratorHint:
-    'On the MacBook: open this site, choose “Narrator screen” at the bottom of the home page and enter room code {code}. Or open the link below directly.',
-  tvTitle: 'Narrator screen (MacBook)',
+    'On a laptop or Android TV: open this site, choose “Narrator screen” at the bottom of the home page and enter room code {code}. Or open the link below directly.',
+  tvTitle: 'Narrator screen (laptop / TV)',
   tvHint:
-    'Use this device as the narrator in the middle of the circle: it shows the QR code to join, reads the narration and shows the clock. The first phone to join becomes the host.',
+    'Put a laptop in the middle of the circle, or open it on an Android TV for everyone to see: it shows the QR code to join, reads the narration through its speakers and shows the clock. On a TV, press “Create a room on this screen” so nobody has to type the code with the remote. The first phone to join becomes the host.',
   tvCreate: 'Create a room on this screen',
   tvOpen: 'Open',
   narratorConnected: '{n} screen(s) connected',
