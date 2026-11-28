@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { cueSpeech, cueText, plainText } from '../src/lib/content/narration.ts';
+import {
+  cueSpeech,
+  cueText,
+  durationEn,
+  durationVi,
+  plainText,
+} from '../src/lib/content/narration.ts';
 
 const names = (id: string) => ({ a: 'An', b: 'Bình' })[id] ?? '?';
 
@@ -21,5 +27,23 @@ describe('narration emotions', () => {
   });
   it('plainText removes every tag', () => {
     expect(plainText('[hắng giọng] Bỏ phiếu! [cười]')).toBe('Bỏ phiếu!');
+  });
+});
+
+describe('defense time', () => {
+  it('reads the seconds in both languages', () => {
+    const cue = { k: 'defense', nominee: 'a', seconds: 90 } as never;
+    expect(cueText(cue, 'vi', names, false)).toBe('An, bạn có 1 phút 30 giây để bào chữa.');
+    expect(cueText(cue, 'en', names, false)).toBe(
+      'An, you have 1 minute 30 seconds to defend yourself.',
+    );
+  });
+  it('formats durations', () => {
+    expect([durationVi(45), durationVi(60), durationVi(180)]).toEqual([
+      '45 giây',
+      '1 phút',
+      '3 phút',
+    ]);
+    expect([durationEn(15), durationEn(120)]).toEqual(['15 seconds', '2 minutes']);
   });
 });

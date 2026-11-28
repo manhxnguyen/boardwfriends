@@ -68,6 +68,7 @@ describe('game messages', () => {
         firstNightKill: true,
         wolfMajority: false,
         dayMinutes: 5,
+        defenseSeconds: 30,
         voice: false,
       }),
     );

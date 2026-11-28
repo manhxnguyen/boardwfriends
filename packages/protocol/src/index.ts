@@ -6,7 +6,7 @@ export * from './roles.ts';
 export * from './views.ts';
 
 /** Bump whenever a message shape changes incompatibly. Clients on another version are rejected. */
-export const PROTOCOL_VERSION = 6;
+export const PROTOCOL_VERSION = 7;
 
 /** Room codes avoid look-alike characters (I/O/0/1) so they are easy to read aloud and type. */
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -17,6 +17,11 @@ export const MAX_PLAYERS = 20;
 export const NAME_MAX_LENGTH = 20;
 export const DAY_MINUTES_MIN = 1;
 export const DAY_MINUTES_MAX = 15;
+/** Classic auto: how long a nominee may defend themselves (AD-AUTO-06). */
+export const DEFENSE_SECONDS_MIN = 15;
+export const DEFENSE_SECONDS_MAX = 180;
+export const DEFENSE_SECONDS_STEP = 15;
+export const DEFENSE_SECONDS_DEFAULT = 30;
 
 /** Literal text frames used for keep-alive. Answered without waking the room. */
 export const PING = 'ping';
@@ -83,6 +88,12 @@ export const SetupMessage = v.object({
     v.integer(),
     v.minValue(DAY_MINUTES_MIN),
     v.maxValue(DAY_MINUTES_MAX),
+  ),
+  defenseSeconds: v.pipe(
+    v.number(),
+    v.integer(),
+    v.minValue(DEFENSE_SECONDS_MIN),
+    v.maxValue(DEFENSE_SECONDS_MAX),
   ),
   voice: v.boolean(),
 });

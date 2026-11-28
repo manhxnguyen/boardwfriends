@@ -177,6 +177,8 @@ export function startClassic(input: {
   firstNightKill?: boolean;
   wolfMajority?: boolean;
   seed?: number;
+  /** Room setting; default 30 s (AD-AUTO-06). */
+  defenseSeconds?: number;
   timings?: Partial<ClassicTimings>;
 }): ClassicGame {
   const dayMs = input.dayMinutes * 60_000;
@@ -190,7 +192,13 @@ export function startClassic(input: {
     firstNightKill: input.firstNightKill ?? false,
     wolfMajority: input.wolfMajority ?? false,
     seed: input.seed ?? 0,
-    timings: { ...DEFAULT_TIMINGS, firstDayMs: dayMs, dayMs, ...input.timings },
+    timings: {
+      ...DEFAULT_TIMINGS,
+      firstDayMs: dayMs,
+      dayMs,
+      ...(input.defenseSeconds ? { defenseMs: input.defenseSeconds * 1000 } : {}),
+      ...input.timings,
+    },
     night: 0,
     day: 0,
     phase: { kind: 'reveal' },
@@ -624,7 +632,7 @@ function second(g: ClassicGame, by: string | null, now: number): ClassicResult {
     if (g.memory.silenced === by) return fail('not_allowed');
   }
   p.sub = { kind: 'defense', nominee: sub.nominee, endsAt: now + g.timings.defenseMs };
-  cue(g, { k: 'defense', nominee: sub.nominee });
+  cue(g, { k: 'defense', nominee: sub.nominee, seconds: Math.round(g.timings.defenseMs / 1000) });
   return ok(g);
 }
 

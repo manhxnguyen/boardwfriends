@@ -45,6 +45,8 @@ export interface SetupView {
   /** Classic auto variant: wolves' victim by most picks, ties at random (official: unanimous). */
   wolfMajority: boolean;
   dayMinutes: number;
+  /** Classic auto: seconds a nominee has to defend themselves. */
+  defenseSeconds: number;
   /** Let the narrator display accept spoken commands (experimental). */
   voice: boolean;
 }
@@ -84,7 +86,7 @@ export type Cue =
   | { k: 'time-warning'; seconds: number }
   | { k: 'nominated'; by: string | null; nominee: string }
   | { k: 'no-second'; nominee: string }
-  | { k: 'defense'; nominee: string }
+  | { k: 'defense'; nominee: string; seconds?: number }
   | { k: 'voting'; nominee: string }
   | { k: 'vote-result'; nominee: string; eliminate: number; keep: number; eliminated: boolean }
   | { k: 'eliminated'; death: Death }

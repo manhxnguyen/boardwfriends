@@ -15,6 +15,9 @@ export const playVi = {
   revealTeam: 'Chỉ phe',
   revealNone: 'Không',
   dayMinutes: 'Thời gian mỗi ngày',
+  defenseSeconds: 'Thời gian bào chữa',
+  defenseSecondsHint:
+    'Người bị đề cử có từng này thời gian để tự bào chữa. Chủ phòng vẫn có thể bỏ qua để bỏ phiếu ngay.',
   minutesShort: '{n} phút',
   firstNightKillLabel: 'Sói cắn từ đêm đầu',
   wolfMajorityLabel: 'Sói chọn theo đa số',
@@ -226,6 +229,9 @@ export const playEn: Record<PlayKey, string> = {
   revealTeam: 'Team only',
   revealNone: 'Nothing',
   dayMinutes: 'Time per day',
+  defenseSeconds: 'Defense time',
+  defenseSecondsHint:
+    'How long a nominee may defend themselves. The host can still skip straight to the vote.',
   minutesShort: '{n} min',
   firstNightKillLabel: 'Wolves hunt from the first night',
   wolfMajorityLabel: 'Wolves vote by majority',

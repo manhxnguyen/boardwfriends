@@ -1,7 +1,16 @@
 <script lang="ts">
-  import { DAY_MINUTES_MAX, DAY_MINUTES_MIN, type SetupView } from '@bwf/protocol';
+  import {
+    DAY_MINUTES_MAX,
+    DAY_MINUTES_MIN,
+    DEFENSE_SECONDS_DEFAULT,
+    DEFENSE_SECONDS_MAX,
+    DEFENSE_SECONDS_MIN,
+    DEFENSE_SECONDS_STEP,
+    type SetupView,
+  } from '@bwf/protocol';
+  import { durationEn, durationVi } from '../content/narration.ts';
   import { VOICE_COMMANDS } from '../features.ts';
-  import { t, type MessageKey } from '../i18n.svelte.ts';
+  import { i18n, t, type MessageKey } from '../i18n.svelte.ts';
 
   /** Host-only game settings: which game, who moderates, reveal rule, day length, voice. */
   let { setup, onChange }: { setup: SetupView; onChange: (setup: SetupView) => void } = $props();
@@ -141,6 +150,28 @@
         onchange={(e) => set({ dayMinutes: Number(e.currentTarget.value) })}
       />
     </label>
+
+    {#if setup.game === 'classic' && setup.mode === 'auto'}
+      {@const defense = setup.defenseSeconds ?? DEFENSE_SECONDS_DEFAULT}
+      <label class="block">
+        <span class="flex justify-between text-sm font-semibold text-slate-300">
+          {t('defenseSeconds')}
+          <span class="font-mono text-moon">
+            {i18n.lang === 'vi' ? durationVi(defense) : durationEn(defense)}
+          </span>
+        </span>
+        <input
+          type="range"
+          class="mt-2 w-full accent-moon"
+          min={DEFENSE_SECONDS_MIN}
+          max={DEFENSE_SECONDS_MAX}
+          step={DEFENSE_SECONDS_STEP}
+          value={defense}
+          onchange={(e) => set({ defenseSeconds: Number(e.currentTarget.value) })}
+        />
+        <span class="mt-1 block text-xs text-slate-400">{t('defenseSecondsHint')}</span>
+      </label>
+    {/if}
 
     {#if VOICE_COMMANDS}
       <label class="flex items-start justify-between gap-3">

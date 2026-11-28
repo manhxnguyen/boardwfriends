@@ -130,7 +130,10 @@ const T = {
     nominated: (by: string | null, nominee: string) =>
       `${by ?? 'Có người'} đề cử ${nominee}. Có ai ủng hộ không?`,
     noSecond: 'Không ai ủng hộ. Tiếp tục thảo luận.',
-    defense: (nominee: string) => `${nominee}, bạn có thời gian để bào chữa.`,
+    defense: (nominee: string, s?: number) =>
+      s
+        ? `${nominee}, bạn có ${durationVi(s)} để bào chữa.`
+        : `${nominee}, bạn có thời gian để bào chữa.`,
     voting: (nominee: string) => `Bỏ phiếu! Giữ ${nominee} lại, hay loại?`,
     voteResult: (e: number, k: number, kept: string | null) =>
       `${e} phiếu loại, ${k} phiếu giữ.${kept ? ` ${kept} được giữ lại.` : ''}`,
@@ -166,7 +169,10 @@ const T = {
     nominated: (by: string | null, nominee: string) =>
       `${by ?? 'Someone'} nominates ${nominee}. Does anyone second?`,
     noSecond: 'Nobody seconded. Keep talking.',
-    defense: (nominee: string) => `${nominee}, you may defend yourself.`,
+    defense: (nominee: string, s?: number) =>
+      s
+        ? `${nominee}, you have ${durationEn(s)} to defend yourself.`
+        : `${nominee}, you may defend yourself.`,
     voting: (nominee: string) => `Vote! Keep ${nominee}, or eliminate?`,
     voteResult: (e: number, k: number, kept: string | null) =>
       `${e} to eliminate, ${k} to keep.${kept ? ` ${kept} stays.` : ''}`,
@@ -186,6 +192,20 @@ const T = {
     and: ' and ',
   },
 };
+
+/** 90 → "1 phút 30 giây"; 60 → "1 phút"; 45 → "45 giây". */
+export function durationVi(s: number): string {
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return [m && `${m} phút`, r && `${r} giây`].filter(Boolean).join(' ');
+}
+
+export function durationEn(s: number): string {
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  const unit = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  return [m && unit(m, 'minute'), r && unit(r, 'second')].filter(Boolean).join(' ');
+}
 
 function reveal(lang: Lang, d: Death, names: Names): string {
   const t = T[lang];
@@ -266,7 +286,7 @@ export function cueText(cue: Cue, lang: Lang, names: Names, oneNight: boolean): 
     case 'no-second':
       return t.noSecond;
     case 'defense':
-      return t.defense(names(cue.nominee));
+      return t.defense(names(cue.nominee), cue.seconds);
     case 'voting':
       return t.voting(names(cue.nominee));
     case 'vote-result':
