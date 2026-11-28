@@ -322,7 +322,7 @@ function deal(state: RoomState, by: string, ctx: RoomContext): RoomResult {
     // Rooms saved before this option existed keep the official quiet first night.
     firstNightKill: setup.firstNightKill === true,
     wolfMajority: setup.wolfMajority === true,
-    defenseSeconds: setup.defenseSeconds,
+    defenseMinutes: setup.defenseMinutes,
     seed: Math.floor(ctx.random() * 2 ** 32),
   });
   return playing({ kind: 'classic', game });

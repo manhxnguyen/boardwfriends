@@ -392,7 +392,7 @@ describe('day: nominate, second, vote (UW-VOTE)', () => {
     expect(sim.game.phase).toMatchObject({ kind: 'day', sub: null });
   });
 
-  it('defense time is a room setting, 30 s by default (AD-AUTO-06)', () => {
+  it('defense time is a room setting, 1–5 minutes, 1 minute by default (AD-AUTO-06)', () => {
     const base = {
       seats: ['p1', 'p2', 'p3'],
       roles: { p1: 'werewolf', p2: 'villager', p3: 'villager' } as Record<string, ClassicRoleId>,
@@ -400,8 +400,8 @@ describe('day: nominate, second, vote (UW-VOTE)', () => {
       reveal: 'role' as const,
       dayMinutes: 5,
     };
-    expect(startClassic(base).timings.defenseMs).toBe(30_000);
-    expect(startClassic({ ...base, defenseSeconds: 90 }).timings.defenseMs).toBe(90_000);
+    expect(startClassic(base).timings.defenseMs).toBe(60_000);
+    expect(startClassic({ ...base, defenseMinutes: 3 }).timings.defenseMs).toBe(180_000);
   });
 
   it('the defense cue says how long the nominee has', () => {

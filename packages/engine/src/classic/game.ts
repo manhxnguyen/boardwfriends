@@ -52,7 +52,7 @@ export const DEFAULT_TIMINGS: ClassicTimings = {
   wolvesStepMs: 30_000,
   witchStepMs: 20_000,
   secondMs: 15_000,
-  defenseMs: 30_000,
+  defenseMs: 60_000,
   voteMs: 20_000,
   hunterMs: 30_000,
   dawnMs: 12_000,
@@ -178,8 +178,8 @@ export function startClassic(input: {
   firstNightKill?: boolean;
   wolfMajority?: boolean;
   seed?: number;
-  /** Room setting; default 30 s (AD-AUTO-06). */
-  defenseSeconds?: number;
+  /** Room setting, 1–5 minutes; default 1 minute (AD-AUTO-06). */
+  defenseMinutes?: number;
   timings?: Partial<ClassicTimings>;
 }): ClassicGame {
   const dayMs = input.dayMinutes * 60_000;
@@ -197,7 +197,7 @@ export function startClassic(input: {
       ...DEFAULT_TIMINGS,
       firstDayMs: dayMs,
       dayMs,
-      ...(input.defenseSeconds ? { defenseMs: input.defenseSeconds * 1000 } : {}),
+      ...(input.defenseMinutes ? { defenseMs: input.defenseMinutes * 60_000 } : {}),
       ...input.timings,
     },
     night: 0,

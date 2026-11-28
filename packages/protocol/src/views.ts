@@ -45,8 +45,8 @@ export interface SetupView {
   /** Classic auto variant: wolves' victim by most picks, ties at random (official: unanimous). */
   wolfMajority: boolean;
   dayMinutes: number;
-  /** Classic auto: seconds a nominee has to defend themselves. */
-  defenseSeconds: number;
+  /** Classic auto: minutes a nominee has to defend themselves. */
+  defenseMinutes: number;
   /** Let the narrator display accept spoken commands (experimental). */
   voice: boolean;
 }

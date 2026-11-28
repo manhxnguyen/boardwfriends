@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 
 const BASE = (process.argv[2] ?? 'http://localhost:5173').replace(/\/$/, '');
 const WS_BASE = BASE.replace(/^http/, 'ws');
-const PROTOCOL_VERSION = 7;
+const PROTOCOL_VERSION = 8;
 const SETUP = {
   t: 'setup',
   game: 'classic',
@@ -24,7 +24,7 @@ const SETUP = {
   firstNightKill: true,
   wolfMajority: false,
   dayMinutes: 5,
-  defenseSeconds: 30,
+  defenseMinutes: 1,
   voice: false,
 };
 const TIMEOUT_MS = 5000;

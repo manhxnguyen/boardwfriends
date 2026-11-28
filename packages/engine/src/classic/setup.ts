@@ -1,6 +1,6 @@
 import {
   CLASSIC_ROLE_IDS,
-  DEFENSE_SECONDS_DEFAULT,
+  DEFENSE_MINUTES_DEFAULT,
   type ClassicRoleId,
   type RoleCounts,
   type SetupView,
@@ -26,7 +26,7 @@ export const EMPTY_SETUP: Setup = {
   // Official rule by default: the wolves must agree (UW-NIGHT-01).
   wolfMajority: false,
   dayMinutes: 5,
-  defenseSeconds: DEFENSE_SECONDS_DEFAULT,
+  defenseMinutes: DEFENSE_MINUTES_DEFAULT,
   voice: false,
 };
 
