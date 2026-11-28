@@ -203,8 +203,27 @@ export type ClassicPhaseView =
   | { kind: 'dusk'; endsAt: number; death: Death }
   | { kind: 'over'; winners: Winner[] };
 
+/** One line of the game's story, shown to everyone once the game is over. */
+export type TimelineEvent =
+  | { k: 'night'; n: number }
+  | { k: 'day'; n: number }
+  /** The wolves' choice; empty when they did not agree. `meet`: night 1 without a kill. */
+  | { k: 'wolves'; targets: string[]; meet?: boolean }
+  | { k: 'protect'; target: string }
+  | { k: 'witch'; action: 'save' | 'kill'; target: string }
+  | { k: 'seer'; target: string; isWolf: boolean }
+  | { k: 'sorceress'; target: string; isSeer: boolean }
+  | { k: 'silence'; target: string }
+  /** A wolf victim who survived, and why. */
+  | { k: 'saved'; target: string; by: 'bodyguard' | 'witch' }
+  | { k: 'death'; playerId: string; cause: DeathCause }
+  | { k: 'vote'; nominee: string; eliminate: string[]; keep: string[]; eliminated: boolean }
+  | { k: 'shot'; hunter: string; target: string | null };
+
 export interface ClassicStats {
   roles: Record<string, ClassicRoleId>;
+  /** What happened, night by night and day by day (older saved games: empty). */
+  timeline: TimelineEvent[];
   deaths: (Death & { day: number })[];
   votes: VoteRecord[];
   /** How many times each player was the target of night suspicions. */

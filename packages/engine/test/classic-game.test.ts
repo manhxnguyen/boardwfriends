@@ -740,3 +740,42 @@ describe('room option: wolves vote by majority (AD-AUTO-14)', () => {
     expect(sim.living()).toHaveLength(8);
   });
 });
+
+describe('timeline (end-of-game story)', () => {
+  it('records each night and day, and is only revealed when the game is over', () => {
+    const sim = toNight2();
+    sim.untilCall('bodyguard', 2).act('p4', ['p7']);
+    sim.untilCall('wolves', 2).act('p1', ['p7']).act('p2', ['p7']);
+    sim.untilCall('seer', 2).act('p3', ['p1']);
+    sim.until((g) => g.phase.kind === 'dawn');
+    expect(sim.game.alive.p7).toBe(true);
+
+    const night2 = sim.game.timeline.slice(
+      sim.game.timeline.findIndex((e) => e.k === 'night' && e.n === 2),
+    );
+    expect(night2).toEqual([
+      { k: 'night', n: 2 },
+      { k: 'wolves', targets: ['p7'] },
+      { k: 'protect', target: 'p7' },
+      { k: 'seer', target: 'p1', isWolf: true },
+      { k: 'saved', target: 'p7', by: 'bodyguard' },
+    ]);
+    expect(sim.game.timeline.slice(0, 2)).toEqual([
+      { k: 'night', n: 1 },
+      { k: 'wolves', targets: [], meet: true },
+    ]);
+    expect(classicView(sim.game, 'p3', sim.now).stats).toBeNull();
+
+    sim.until((g) => g.phase.kind === 'day');
+    sim.lynch('p7', 'p8', 'p1', ['p3', 'p4', 'p5', 'p6', 'p7']);
+    const vote = sim.game.timeline.find((e) => e.k === 'vote');
+    expect(vote).toEqual({
+      k: 'vote',
+      nominee: 'p1',
+      eliminate: ['p3', 'p4', 'p5', 'p6', 'p7'],
+      keep: ['p1', 'p2', 'p8'],
+      eliminated: true,
+    });
+    expect(sim.game.timeline).toContainEqual({ k: 'death', playerId: 'p1', cause: 'vote' });
+  });
+});

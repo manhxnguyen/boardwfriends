@@ -17,6 +17,7 @@
   import { WakeLock } from '../wakeLock.svelte.ts';
   import Countdown from './Countdown.svelte';
   import FinalCountdown from './FinalCountdown.svelte';
+  import GameRecap from './GameRecap.svelte';
   import CopyLinkButton from './CopyLinkButton.svelte';
   import LangToggle from './LangToggle.svelte';
   import RulesButton from './RulesButton.svelte';
@@ -336,6 +337,11 @@
             </li>
           {/each}
         </ul>
+        {#if play.stats?.timeline?.length}
+          <div class="mt-8">
+            <GameRecap timeline={play.stats.timeline} roles={play.stats.roles} {names} big />
+          </div>
+        {/if}
       {:else}
         {#if play.phase.kind === 'vote'}
           <p class="mt-4 text-2xl">

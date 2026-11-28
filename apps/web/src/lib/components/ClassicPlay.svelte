@@ -7,6 +7,7 @@
   import { i18n, t, type MessageKey } from '../i18n.svelte.ts';
   import Countdown from './Countdown.svelte';
   import FinalCountdown from './FinalCountdown.svelte';
+  import GameRecap from './GameRecap.svelte';
   import HoldToReveal from './HoldToReveal.svelte';
   import Notebook from './Notebook.svelte';
   import PlayerPicker from './PlayerPicker.svelte';
@@ -469,7 +470,10 @@
 
     {#if view.stats}
       <section class="mt-6 space-y-4">
-        {#if view.stats.deaths.length}
+        {#if view.stats.timeline?.length}
+          <GameRecap timeline={view.stats.timeline} roles={view.stats.roles} {names} />
+        {:else if view.stats.deaths.length}
+          <!-- Games saved before the timeline existed. -->
           <ul class="space-y-1 rounded-xl bg-night-900 p-4 text-sm">
             {#each view.stats.deaths as d (d.playerId)}
               <li>

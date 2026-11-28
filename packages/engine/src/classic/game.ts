@@ -11,6 +11,7 @@ import type {
   Prompt,
   RevealMode,
   RoleCounts,
+  TimelineEvent,
   VoteRecord,
   Winner,
 } from '@bwf/protocol';
@@ -102,6 +103,8 @@ interface NightActs {
 }
 
 export interface ClassicGame {
+  /** The story of the game, revealed when it is over. */
+  timeline: TimelineEvent[];
   /** Seating order (Insomniac neighbours). */
   seats: string[];
   roles: Record<string, ClassicRoleId>;
@@ -184,6 +187,7 @@ export function startClassic(input: {
 }): ClassicGame {
   const dayMs = input.dayMinutes * 60_000;
   return {
+    timeline: [],
     seats: [...input.seats],
     roles: { ...input.roles },
     deck: { ...input.deck },
@@ -376,6 +380,7 @@ function startNight(g: ClassicGame, at: number) {
     (s) => s.call,
   );
   g.acts = emptyActs();
+  log(g, { k: 'night', n: g.night });
   cue(g, { k: 'night', n: g.night });
   openStep(g, 0, at);
 }
@@ -484,11 +489,30 @@ function resolveNight(g: ClassicGame, at: number) {
   const { acts, memory } = g;
   const killed: { id: string; cause: DeathCause }[] = [];
 
-  if (!quietNight(g)) {
+  const quiet = quietNight(g);
+  log(
+    g,
+    quiet ? { k: 'wolves', targets: [], meet: true } : { k: 'wolves', targets: acts.wolfVictims },
+  );
+  if (!quiet && acts.bodyguard) log(g, { k: 'protect', target: acts.bodyguard });
+  if (!quiet && acts.witch?.target && acts.witch.action !== 'pass') {
+    log(g, { k: 'witch', action: acts.witch.action, target: acts.witch.target });
+  }
+  if (acts.seer) {
+    log(g, { k: 'seer', target: acts.seer, isWolf: roleDef(g.roles[acts.seer]!).seenAsWolf });
+  }
+  if (acts.sorceress) {
+    log(g, { k: 'sorceress', target: acts.sorceress, isSeer: g.roles[acts.sorceress] === 'seer' });
+  }
+  if (acts.spellcaster) log(g, { k: 'silence', target: acts.spellcaster });
+
+  if (!quiet) {
     const protectedId = acts.bodyguard; // UW-R-BG-01
     const saved = acts.witch?.action === 'save' ? acts.witch.target : null;
     for (const victim of acts.wolfVictims) {
-      if (victim !== protectedId && victim !== saved) killed.push({ id: victim, cause: 'wolves' });
+      if (victim === protectedId) log(g, { k: 'saved', target: victim, by: 'bodyguard' });
+      else if (victim === saved) log(g, { k: 'saved', target: victim, by: 'witch' });
+      else killed.push({ id: victim, cause: 'wolves' });
     }
     if (acts.witch?.action === 'kill' && acts.witch.target) {
       const target = acts.witch.target;
@@ -567,6 +591,7 @@ function act(
       if (players.length > 1) return fail('invalid_action');
       if (g.phase.kind !== 'hunter') return fail('wrong_phase');
       const then = g.phase.then;
+      log(g, { k: 'shot', hunter: g.phase.hunter, target: target ?? null });
       if (target) {
         const death = kill(g, target, 'hunter');
         cue(g, { k: 'eliminated', death });
@@ -685,6 +710,11 @@ function resolveVote(g: ClassicGame, at: number) {
   const keepCount = Object.values(votes).filter((v) => v === 'keep').length;
   const eliminated = eliminateCount > aliveIds(g).length / 2;
   g.votes.push({ day: g.day, nominee, votes: { ...votes }, eliminated });
+  const by = (choice: 'eliminate' | 'keep') =>
+    Object.entries(votes)
+      .filter(([, v]) => v === choice)
+      .map(([id]) => id);
+  log(g, { k: 'vote', nominee, eliminate: by('eliminate'), keep: by('keep'), eliminated });
   cue(g, { k: 'vote-result', nominee, eliminate: eliminateCount, keep: keepCount, eliminated });
 
   if (!eliminated) return resumeDiscussion(g, at);
@@ -732,6 +762,7 @@ function kill(g: ClassicGame, id: string, cause: DeathCause): Death {
     team: g.reveal === 'none' ? null : roleDef(role).team,
   };
   g.deaths.push({ ...death, day: Math.max(g.day, g.night) });
+  log(g, { k: 'death', playerId: id, cause });
   return death;
 }
 
@@ -767,6 +798,7 @@ function gameOver(g: ClassicGame, winners: Winner[]) {
 
 function startDay(g: ClassicGame, at: number) {
   g.day = g.night;
+  log(g, { k: 'day', n: g.day });
   const ms = g.day === 1 ? g.timings.firstDayMs : g.timings.dayMs;
   g.phase = {
     kind: 'day',
@@ -971,7 +1003,13 @@ export function classicView(g: ClassicGame, viewer: string | null, now: number):
           }
         : null,
     stats: over
-      ? { roles: { ...g.roles }, deaths: g.deaths, votes: g.votes, suspected: g.suspected }
+      ? {
+          roles: { ...g.roles },
+          timeline: g.timeline ?? [],
+          deaths: g.deaths,
+          votes: g.votes,
+          suspected: g.suspected,
+        }
       : null,
   };
 }
@@ -1000,6 +1038,11 @@ function hideCueCause(entry: CueEntry): CueEntry {
 /** Night 1 under the official rule: wolves only meet, protections have no effect. */
 function quietNight(g: ClassicGame): boolean {
   return g.night === 1 && !g.firstNightKill;
+}
+
+/** Adds to the story (games saved before the timeline existed start an empty one). */
+function log(g: ClassicGame, event: TimelineEvent) {
+  (g.timeline ??= []).push(event);
 }
 
 function emptyActs(): NightActs {
