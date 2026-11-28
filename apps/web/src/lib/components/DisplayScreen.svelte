@@ -276,10 +276,22 @@
       <!-- Game in progress -->
       <section class="mt-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 class="text-4xl font-bold md:text-6xl 2xl:text-8xl">
-            {isNight ? '🌙' : '☀️'}
-            {phaseTitle}
-          </h1>
+          {#if play.kind === 'classic' && play.clock}
+            {@const clock = play.clock}
+            <!-- Which night/day it is, big enough for the whole circle. -->
+            <h1 class="text-4xl font-bold md:text-6xl 2xl:text-8xl">
+              {clock.kind === 'night' ? '🌙' : '☀️'}
+              {t(clock.kind === 'night' ? 'phaseNight' : 'phaseDay', { n: String(clock.n) })}
+            </h1>
+            {#if !currentCall && play.phase.kind !== 'day'}
+              <p class="mt-2 text-2xl text-slate-300 md:text-3xl 2xl:text-5xl">{phaseTitle}</p>
+            {/if}
+          {:else}
+            <h1 class="text-4xl font-bold md:text-6xl 2xl:text-8xl">
+              {isNight ? '🌙' : '☀️'}
+              {phaseTitle}
+            </h1>
+          {/if}
           {#if currentCall}<p class="mt-2 text-2xl text-moon md:text-3xl 2xl:text-5xl">
               {currentCall}
             </p>{/if}

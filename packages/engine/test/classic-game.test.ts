@@ -779,3 +779,22 @@ describe('timeline (end-of-game story)', () => {
     expect(sim.game.timeline).toContainEqual({ k: 'death', playerId: 'p1', cause: 'vote' });
   });
 });
+
+describe('night/day clock shown to everyone', () => {
+  it('counts nights and days; dawn and dusk belong to the day', () => {
+    const clock = (sim: Sim) => classicView(sim.game, null, sim.now).clock;
+    const sim = new Sim(BASIC);
+    expect(clock(sim)).toBeNull(); // looking at cards
+    sim.do({ type: 'start' });
+    expect(clock(sim)).toEqual({ kind: 'night', n: 1 });
+    sim.until((g) => g.phase.kind === 'dawn');
+    expect(clock(sim)).toEqual({ kind: 'day', n: 1 });
+    sim.until((g) => g.phase.kind === 'day');
+    expect(clock(sim)).toEqual({ kind: 'day', n: 1 });
+    sim.lynch('p7', 'p8', 'p6', ['p3', 'p4', 'p5', 'p7', 'p8']);
+    expect(sim.game.phase.kind).not.toBe('night'); // dusk or the Hunter's shot
+    expect(clock(sim)).toEqual({ kind: 'day', n: 1 });
+    sim.until((g) => g.phase.kind === 'night');
+    expect(clock(sim)).toEqual({ kind: 'night', n: 2 });
+  });
+});

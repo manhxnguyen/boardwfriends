@@ -150,11 +150,23 @@
 >
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-xl font-bold">{title}</h1>
-      {#if phase.kind === 'night'}
-        <p class="text-xs text-slate-400">
-          {t('nowCalling', { name: callTitle(phase.call, i18n.lang, false) })}
-        </p>
+      {#if view.clock}
+        <!-- Which night/day it is, always visible to everyone. -->
+        <h1 class="text-xl font-bold">
+          {view.clock.kind === 'night' ? '🌙' : '☀️'}
+          {t(view.clock.kind === 'night' ? 'phaseNight' : 'phaseDay', {
+            n: String(view.clock.n),
+          })}
+        </h1>
+        {#if phase.kind === 'night'}
+          <p class="text-xs text-slate-400">
+            {t('nowCalling', { name: callTitle(phase.call, i18n.lang, false) })}
+          </p>
+        {:else if phase.kind !== 'day'}
+          <p class="text-xs text-slate-400">{title}</p>
+        {/if}
+      {:else}
+        <h1 class="text-xl font-bold">{title}</h1>
       {/if}
     </div>
     <Countdown {endsAt} serverNow={() => conn.serverNow()} />

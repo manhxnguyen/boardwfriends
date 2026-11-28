@@ -240,6 +240,11 @@ export interface ClassicView {
   cues: CueEntry[];
   /** Room option: the wolves' victim is the most picked player (AD-AUTO-14). */
   wolfMajority: boolean;
+  /**
+   * Which night or day it is, for everyone (dawn, dusk and the Hunter count as the day).
+   * Null before night 1 and after the game.
+   */
+  clock: { kind: 'night' | 'day'; n: number } | null;
   /** Null for the narrator display. */
   you: {
     role: ClassicRoleId;

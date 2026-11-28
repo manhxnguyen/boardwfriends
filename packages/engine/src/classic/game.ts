@@ -991,6 +991,7 @@ export function classicView(g: ClassicGame, viewer: string | null, now: number):
     phase: over ? phaseView(g) : hideNightCauses(phaseView(g)),
     cues: over ? g.cues : g.cues.map(hideCueCause),
     wolfMajority: g.wolfMajority,
+    clock: clockOf(g),
     you:
       viewer !== null && viewer in g.roles
         ? {
@@ -1012,6 +1013,19 @@ export function classicView(g: ClassicGame, viewer: string | null, now: number):
         }
       : null,
   };
+}
+
+/** Night n, or day n (dawn after night n is already day n; dusk still belongs to the day). */
+function clockOf(g: ClassicGame): ClassicView['clock'] {
+  switch (g.phase.kind) {
+    case 'reveal':
+    case 'over':
+      return null;
+    case 'night':
+      return { kind: 'night', n: g.night };
+    default:
+      return { kind: 'day', n: Math.max(g.day, g.night) };
+  }
 }
 
 /** During the game nobody may learn whether a night death came from the wolves or the Witch. */
