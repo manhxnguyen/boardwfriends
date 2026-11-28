@@ -20,6 +20,7 @@ import {
   type TtsVoicesResponse,
   type VieneuConfig,
 } from '@bwf/server';
+import { vieneuKey, vieneuStatus } from './vieneu-key.ts';
 
 const { values: args } = parseArgs({
   options: { port: { type: 'string', default: '8090' } },
@@ -27,7 +28,7 @@ const { values: args } = parseArgs({
 const PORT = Number(args.port);
 const VIENEU: VieneuConfig = {
   url: process.env.VIENEU_URL ?? 'http://127.0.0.1:8000',
-  apiKey: process.env.VIENEU_API_KEY,
+  apiKey: vieneuKey(),
 };
 
 /** Sites whose pages may use this bridge. Extra ones: VOICE_ORIGINS=https://a,https://b */
@@ -99,12 +100,10 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, '127.0.0.1', async () => {
-  const voices = await listVieneuVoices(VIENEU).catch(() => null);
+  const vieneu = await vieneuStatus(VIENEU);
   console.log('\n🎙️  boardwfriends voice bridge');
   console.log(`   Listening on:   http://localhost:${PORT} (this computer only)`);
-  console.log(
-    `   VieNeu:         ${VIENEU.url} ${voices ? `✓ ${voices.length} voices` : '✗ not answering yet'}`,
-  );
+  console.log(`   VieNeu:         ${VIENEU.url} ${vieneu}`);
   console.log('   On the narrator screen: press “🖥️ VieNeu trên máy này”.');
   console.log('   Press Ctrl+C to stop.\n');
 });

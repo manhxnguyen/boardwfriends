@@ -95,8 +95,9 @@ uv run python -m apps.openai_speech        # nghe ở http://127.0.0.1:8000
 VIENEU_URL=http://127.0.0.1:8000 pnpm lan
 ```
 
-VieNeu chạy trên một PC khác trong mạng: chạy nó với `HOST=0.0.0.0 VIENEU_API_KEY=<khoá>`, rồi
-`VIENEU_URL=http://<IP của PC>:8000 VIENEU_API_KEY=<khoá> pnpm lan`.
+VieNeu chạy trên một PC khác trong mạng: chạy nó với `HOST=0.0.0.0 VIENEU_API_KEY=<khoá>`, rồi trên
+máy chạy app: `VIENEU_URL=http://<IP của PC>:8000 VIENEU_API_KEY=<khoá> pnpm lan` (hoặc lưu khoá vào
+`~/.vieneu-key` như ở cách C). Nếu VieNeu chạy có khoá, `pnpm voice` cũng cần khoá đó.
 
 **B. VieNeu trên chính máy dẫn truyện** (chơi trên Cloudflare, màn hình là laptop hoặc PC đang chạy
 VieNeu). Một cầu nối nhỏ cho phép trang Cloudflare gọi VieNeu trên máy này:
@@ -114,13 +115,17 @@ dùng được khi màn hình là TV, vì trình duyệt chặn trang https gọ
 (`brew install cloudflared`) và `wrangler login`.
 
 ```sh
-# Tạo một khoá dài, ngẫu nhiên, và giữ kín: tunnel là công khai, khoá bảo vệ VieNeu của bạn.
-export VIENEU_API_KEY=$(openssl rand -hex 24)
-# Cửa sổ 1, trong thư mục VieNeu-TTS (cùng biến VIENEU_API_KEY):
-uv run python -m apps.openai_speech
-# Cửa sổ 2, trong thư mục boardwfriends:
+# Một lần duy nhất: tạo khoá và lưu vào file ~/.vieneu-key. Tunnel là công khai, khoá bảo vệ VieNeu.
+openssl rand -hex 24 > ~/.vieneu-key
+# Cửa sổ 1, trong thư mục VieNeu-TTS:
+VIENEU_API_KEY=$(cat ~/.vieneu-key) uv run python -m apps.openai_speech
+# Cửa sổ 2, trong thư mục boardwfriends (tự đọc khoá từ ~/.vieneu-key):
 pnpm tunnel
 ```
+
+Hai cửa sổ phải dùng **cùng một khoá**, nên khoá được lưu vào file thay vì gõ `export` trong từng
+cửa sổ (mỗi lần `openssl rand` ra một khoá khác). `pnpm lan` và `pnpm voice` cũng tự đọc file này.
+Nếu VieNeu báo `401 Unauthorized` là khoá không khớp: chạy lại VieNeu bằng lệnh ở cửa sổ 1.
 
 `pnpm tunnel` kiểm tra VieNeu đã có khoá, mở một tunnel nhanh (`*.trycloudflare.com`), rồi lưu địa
 chỉ và khoá vào Worker (secret `VIENEU_URL`, `VIENEU_API_KEY`). Tải lại màn hình dẫn truyện là thấy
@@ -252,8 +257,9 @@ uv run python -m apps.openai_speech        # listens on http://127.0.0.1:8000
 VIENEU_URL=http://127.0.0.1:8000 pnpm lan
 ```
 
-VieNeu on another PC of the network: run it with `HOST=0.0.0.0 VIENEU_API_KEY=<key>`, then
-`VIENEU_URL=http://<PC address>:8000 VIENEU_API_KEY=<key> pnpm lan`.
+VieNeu on another PC of the network: run it with `HOST=0.0.0.0 VIENEU_API_KEY=<key>`, then on the
+app machine `VIENEU_URL=http://<PC address>:8000 VIENEU_API_KEY=<key> pnpm lan` (or save the key in
+`~/.vieneu-key` as in way C). If VieNeu runs with a key, `pnpm voice` needs that key too.
 
 **B. VieNeu on the narrator computer itself** (playing on Cloudflare, with the narrator screen on
 the laptop or PC that runs VieNeu). A small bridge lets the Cloudflare page call VieNeu on this
@@ -273,13 +279,18 @@ VieNeu on the internet over https so the Cloudflare server can reach it. Free. N
 (`brew install cloudflared`) and `wrangler login`.
 
 ```sh
-# Make a long random key and keep it secret: the tunnel is public, the key protects your VieNeu.
-export VIENEU_API_KEY=$(openssl rand -hex 24)
-# Terminal 1, in the VieNeu-TTS folder (same VIENEU_API_KEY):
-uv run python -m apps.openai_speech
-# Terminal 2, in the boardwfriends folder:
+# Once: make a key and save it in ~/.vieneu-key. The tunnel is public, the key protects VieNeu.
+openssl rand -hex 24 > ~/.vieneu-key
+# Terminal 1, in the VieNeu-TTS folder:
+VIENEU_API_KEY=$(cat ~/.vieneu-key) uv run python -m apps.openai_speech
+# Terminal 2, in the boardwfriends folder (reads ~/.vieneu-key by itself):
 pnpm tunnel
 ```
+
+Both terminals must use **the same key**, so it lives in a file rather than an `export` typed in
+each terminal (every `openssl rand` makes a different key). `pnpm lan` and `pnpm voice` read the
+file too. If VieNeu logs `401 Unauthorized`, the keys differ: restart VieNeu with the terminal 1
+command.
 
 `pnpm tunnel` checks that VieNeu has a key, opens a quick tunnel (`*.trycloudflare.com`) and stores
 its address and the key in the Worker (secrets `VIENEU_URL`, `VIENEU_API_KEY`). Reload the narrator

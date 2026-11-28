@@ -4,19 +4,33 @@
  * Cloudflare Worker where to find it, so the narrator screen on ANY device (a TV too) can read
  * with VieNeu while everyone plays on the Cloudflare site.
  *
- *   # Terminal 1, in the VieNeu-TTS folder (the key protects VieNeu once it is on the internet):
- *   VIENEU_API_KEY=<long random key> uv run python -m apps.openai_speech
- *   # Terminal 2, here:
- *   VIENEU_API_KEY=<same key> pnpm tunnel
+ *   openssl rand -hex 24 > ~/.vieneu-key      # once: the key protects VieNeu on the internet
+ *   # Terminal 1, in the VieNeu-TTS folder:
+ *   VIENEU_API_KEY=$(cat ~/.vieneu-key) uv run python -m apps.openai_speech
+ *   # Terminal 2, here (reads ~/.vieneu-key by itself):
+ *   pnpm tunnel
  *
  * Needs `cloudflared` (brew install cloudflared) and `wrangler login`. The quick tunnel address
  * changes on every run; this script updates the Worker's VIENEU_URL secret each time.
  */
 import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { request } from 'node:https';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 
 const VIENEU_URL = (process.env.VIENEU_URL ?? 'http://127.0.0.1:8000').replace(/\/$/, '');
-const KEY = process.env.VIENEU_API_KEY;
+// The same key in every terminal: VIENEU_API_KEY, or the file made once with
+// `openssl rand -hex 24 > ~/.vieneu-key`.
+const KEY_FILE = join(homedir(), '.vieneu-key');
+const KEY = process.env.VIENEU_API_KEY || readKeyFile();
+function readKeyFile() {
+  try {
+    return readFileSync(KEY_FILE, 'utf8').trim();
+  } catch {
+    return undefined;
+  }
+}
 
 function fail(message) {
   console.error(`\n✗ ${message}\n`);
@@ -88,9 +102,9 @@ async function putSecret(name, value) {
 // 1. Checks before exposing anything.
 if (!KEY || KEY.length < 16) {
   fail(
-    'Set VIENEU_API_KEY (16+ characters), the same key VieNeu was started with.\n' +
-      '  The tunnel is public: without a key anyone could use your computer to make speech.\n' +
-      '  Make one with: openssl rand -hex 24',
+    `No VieNeu key. Make one once:  openssl rand -hex 24 > ${KEY_FILE}\n` +
+      '  then start VieNeu with:      VIENEU_API_KEY=$(cat ~/.vieneu-key) uv run python -m apps.openai_speech\n' +
+      '  The tunnel is public: without a key anyone could use your computer to make speech.',
   );
 }
 try {
@@ -101,7 +115,10 @@ try {
 const withKey = await status(`${VIENEU_URL}/v1/voices`, { Authorization: `Bearer ${KEY}` });
 if (withKey === 0) fail(`VieNeu is not answering at ${VIENEU_URL}. Start it first.`);
 if (withKey === 401 || withKey === 403)
-  fail('VieNeu refused the key: use the same VIENEU_API_KEY.');
+  fail(
+    `VieNeu refused the key. Start VieNeu with the same one:\n` +
+      '  VIENEU_API_KEY=$(cat ~/.vieneu-key) uv run python -m apps.openai_speech',
+  );
 const withoutKey = await status(`${VIENEU_URL}/v1/voices`);
 if (withoutKey === 200) {
   fail(

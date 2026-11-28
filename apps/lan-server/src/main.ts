@@ -35,6 +35,7 @@ import {
   type ServerInfoResponse,
 } from '@bwf/server';
 import { WebSocketServer, type WebSocket } from 'ws';
+import { vieneuKey, vieneuStatus } from './vieneu-key.ts';
 
 const { values: args } = parseArgs({
   options: {
@@ -54,7 +55,7 @@ const TTS_KEY = process.env.GOOGLE_TTS_API_KEY;
 // Self-hosted VieNeu-TTS on this or another machine of the local network (works offline):
 // VIENEU_URL=http://192.168.1.50:8000 pnpm lan
 const VIENEU: VieneuConfig | null = process.env.VIENEU_URL
-  ? { url: process.env.VIENEU_URL, apiKey: process.env.VIENEU_API_KEY }
+  ? { url: process.env.VIENEU_URL, apiKey: vieneuKey() }
   : null;
 const ttsCache = new Map<string, { audio: ArrayBuffer; headers: Record<string, string> }>();
 
@@ -310,14 +311,14 @@ if (!existsSync(join(STATIC_DIR, 'index.html'))) {
     `⚠️  Web app not found in ${STATIC_DIR}. Run "pnpm build" first (or use "pnpm lan").`,
   );
 }
-server.listen(PORT, args.host, () => {
+server.listen(PORT, args.host, async () => {
   const lan = lanOrigin();
   console.log('\n🐺 boardwfriends LAN server');
   console.log(`   Narrator (this Mac):  http://localhost:${PORT}`);
   console.log(`   Phones (same wifi):   ${lan ?? '(no network found)'}`);
   if (DATA_DIR) console.log(`   Saving rooms in:      ${DATA_DIR}`);
   const voices = [
-    VIENEU && `VieNeu at ${VIENEU.url}`,
+    VIENEU && `VieNeu at ${VIENEU.url} ${await vieneuStatus(VIENEU)}`,
     TTS_KEY && 'Google Cloud TTS (needs internet)',
   ]
     .filter(Boolean)
