@@ -18,6 +18,7 @@
   import Countdown from './Countdown.svelte';
   import FinalCountdown from './FinalCountdown.svelte';
   import GameRecap from './GameRecap.svelte';
+  import OneNightRecap from './OneNightRecap.svelte';
   import CopyLinkButton from './CopyLinkButton.svelte';
   import LangToggle from './LangToggle.svelte';
   import RulesButton from './RulesButton.svelte';
@@ -381,6 +382,9 @@
               </li>
             {/each}
           </ul>
+          <div class="mt-8">
+            <OneNightRecap {result} {names} big />
+          </div>
         {:else}
           <ul class="mt-8 flex flex-wrap gap-3">
             {#each play.seats as seat (seat.id)}

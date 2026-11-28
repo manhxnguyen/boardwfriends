@@ -7,6 +7,7 @@ import {
   type OneNightPhaseView,
   type OneNightResult,
   type OneNightRoleCounts,
+  type OneNightEvent,
   type OneNightRoleId,
   type OneNightView,
   type Prompt,
@@ -62,6 +63,8 @@ type Phase =
   | { kind: 'over'; winners: Winner[] };
 
 export interface OneNightGame {
+  /** The night, step by step; revealed with the result. */
+  story: OneNightEvent[];
   seats: string[];
   /** Card each player was dealt (their night role). */
   original: Record<string, OneNightRoleId>;
@@ -128,6 +131,7 @@ export function startOneNight(input: {
   if (deck.length !== seats.length + CENTER_CARDS) throw new Error('deck size mismatch');
   const original = Object.fromEntries(seats.map((id, i) => [id, deck[i]!]));
   return {
+    story: [],
     seats: [...seats],
     original,
     cards: { ...original },
@@ -248,23 +252,29 @@ function openStep(g: OneNightGame, step: number, at: number) {
   const wolves = actingAs(g, 'werewolf');
   if (call === 'werewolf') {
     for (const id of wolves) learn(g, id, { k: 'wolves', ids: wolves });
+    if (wolves.length) tell(g, { k: 'wolves', ids: wolves });
   }
   if (call === 'minion') {
-    for (const id of holdersOf(g, 'minion', 'original'))
+    for (const id of holdersOf(g, 'minion', 'original')) {
       learn(g, id, { k: 'on-minion', ids: wolves });
+      tell(g, { k: 'minion', actor: id, wolves });
+    }
   }
   if (call === 'mason') {
     const masons = actingAs(g, 'mason');
     for (const id of masons) learn(g, id, { k: 'masons', ids: masons });
+    if (masons.length) tell(g, { k: 'masons', ids: masons });
   }
   if (call === 'insomniac') {
     for (const id of holdersOf(g, 'insomniac', 'original')) {
       learn(g, id, { k: 'on-self', role: g.cards[id]! });
+      tell(g, { k: 'insomniac', actor: id, role: g.cards[id]! });
     }
   }
   if (call === 'doppel-insomniac' && g.doppelCopy === 'insomniac') {
     for (const id of holdersOf(g, 'doppelganger', 'original')) {
       learn(g, id, { k: 'on-self', role: g.cards[id]! });
+      tell(g, { k: 'insomniac', actor: id, role: g.cards[id]! });
     }
   }
 }
@@ -272,16 +282,31 @@ function openStep(g: OneNightGame, step: number, at: number) {
 function closeStep(g: OneNightGame, random: Random) {
   if (g.phase.kind !== 'night') return;
   const call = g.calls[g.phase.step]!;
+  // Who woke up with something to do and let the time run out.
+  const optional: Record<string, OneNightRoleId> = {
+    doppelganger: 'doppelganger',
+    seer: 'seer',
+    robber: 'robber',
+    troublemaker: 'troublemaker',
+  };
+  const role = optional[call];
+  // Dealt holders only: a Doppelgänger that copied the role already acted during its own call.
+  const idle = role
+    ? holdersOf(g, role, 'original')
+    : call === 'werewolf' && actingAs(g, 'werewolf').length === 1
+      ? actingAs(g, 'werewolf')
+      : [];
+  for (const id of idle) if (!g.done.includes(id)) tell(g, { k: 'idle', actor: id, call });
   // [OW] the Drunk must swap; if they did not choose in time, pick a center card for them [AD].
   if (call === 'drunk') {
     for (const id of holdersOf(g, 'drunk', 'original')) {
-      if (!g.done.includes(id)) swapWithCenter(g, id, Math.floor(random() * CENTER_CARDS));
+      if (!g.done.includes(id)) swapWithCenter(g, id, Math.floor(random() * CENTER_CARDS), true);
     }
   }
   // A Doppelgänger-Drunk must swap too.
   if (call === 'doppelganger' && g.doppelCopy === 'drunk') {
     for (const id of holdersOf(g, 'doppelganger', 'original')) {
-      if (!g.done.includes(id)) swapWithCenter(g, id, Math.floor(random() * CENTER_CARDS));
+      if (!g.done.includes(id)) swapWithCenter(g, id, Math.floor(random() * CENTER_CARDS), true);
     }
   }
   cue(g, { k: 'call-close', call });
@@ -325,6 +350,7 @@ function act(
       if (players.length !== 1 || center.length || !target) return fail('invalid_action');
       const copy = g.cards[target]!;
       g.doppelCopy = copy;
+      tell(g, { k: 'doppel', actor: playerId, target, role: copy });
       learn(g, playerId, { k: 'on-doppel', target, role: copy });
       // A Doppelgänger-Minion learns the werewolves at the end of its own call [OR p.3].
       if (copy === 'minion') learn(g, playerId, { k: 'on-minion', ids: actingAs(g, 'werewolf') });
@@ -335,23 +361,32 @@ function act(
     case 'on-werewolf': // Lone wolf peeks at one center card (ON-NIGHT-03).
       if (players.length || center.length !== 1) return fail('invalid_action');
       learn(g, playerId, { k: 'on-center', index: center[0]!, role: g.center[center[0]!]! });
+      tell(g, { k: 'lone-wolf', actor: playerId, index: center[0]!, role: g.center[center[0]!]! });
       break;
     case 'on-seer': // One other player's card, or two center cards [OR p.4].
       if (players.length === 1 && center.length === 0 && target) {
         learn(g, playerId, { k: 'on-player', target, role: g.cards[target]! });
+        tell(g, { k: 'seer', actor: playerId, target, role: g.cards[target]! });
       } else if (players.length === 0 && center.length === 2) {
         for (const i of center)
           learn(g, playerId, { k: 'on-center', index: i, role: g.center[i]! });
+        tell(g, {
+          k: 'seer-center',
+          actor: playerId,
+          cards: center.map((i) => ({ index: i, role: g.center[i]! })),
+        });
       } else return fail('invalid_action');
       break;
     case 'on-robber': // Swap with another player, then look at the new card [OR p.4].
       if (players.length !== 1 || center.length || !target) return fail('invalid_action');
       [g.cards[playerId], g.cards[target]] = [g.cards[target]!, g.cards[playerId]!];
       learn(g, playerId, { k: 'on-robbed', target, role: g.cards[playerId]! });
+      tell(g, { k: 'robber', actor: playerId, target, took: g.cards[playerId]! });
       break;
     case 'on-troublemaker': // Swap two other players without looking [OR p.4].
       if (players.length !== 2 || center.length) return fail('invalid_action');
       [g.cards[players[0]!], g.cards[players[1]!]] = [g.cards[players[1]!]!, g.cards[players[0]!]!];
+      tell(g, { k: 'troublemaker', actor: playerId, a: players[0]!, b: players[1]! });
       break;
     case 'on-drunk': // Swap with a center card without looking [OR p.5].
       if (players.length || center.length !== 1) return fail('invalid_action');
@@ -364,7 +399,8 @@ function act(
   return ok(g);
 }
 
-function swapWithCenter(g: OneNightGame, playerId: string, index: number) {
+function swapWithCenter(g: OneNightGame, playerId: string, index: number, auto = false) {
+  tell(g, { k: 'drunk', actor: playerId, index, auto });
   const card = g.center[index]!;
   g.center[index] = g.cards[playerId]!;
   g.cards[playerId] = card;
@@ -445,6 +481,7 @@ function resolve(g: OneNightGame) {
     votes: { ...g.votes },
     deaths: dead,
     winningPlayers,
+    story: g.story ?? [],
   };
   g.phase = { kind: 'over', winners };
   cue(g, { k: 'on-result', deaths: dead });
@@ -594,6 +631,11 @@ function effective(g: OneNightGame, card: OneNightRoleId): OneNightRoleId {
 
 function holdersOf(g: OneNightGame, role: OneNightRoleId, which: 'original' | 'cards'): string[] {
   return g.seats.filter((id) => g[which][id] === role);
+}
+
+/** Adds to the night's story (games saved before it existed start an empty one). */
+function tell(g: OneNightGame, event: OneNightEvent) {
+  (g.story ??= []).push(event);
 }
 
 function learn(g: OneNightGame, id: string, item: Knowledge) {

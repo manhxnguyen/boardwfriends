@@ -44,7 +44,15 @@
     const follow = pack.filter(
       (m) => m.id !== conn.you && m.picks.length === prompt.count && !sameSet(m.picks, mine),
     );
-    return { marks, agreed, follow, solo: pack.length === 1 };
+    // Who is being targeted, by whom (most picked first), and who has not chosen yet.
+    const byTarget = new Map<string, string[]>();
+    for (const m of pack)
+      for (const p of m.picks) byTarget.set(p, [...(byTarget.get(p) ?? []), m.id]);
+    const targets = [...byTarget.entries()]
+      .map(([id, by]) => ({ id, by }))
+      .sort((a, b) => b.by.length - a.by.length);
+    const waiting = pack.filter((m) => m.picks.length < prompt.count).map((m) => m.id);
+    return { marks, agreed, follow, solo: pack.length === 1, targets, waiting, size: pack.length };
   });
   const phase = $derived(view.phase);
   const caption = $derived.by(() => {
@@ -232,15 +240,32 @@
             <p class="mb-2 text-xs text-slate-400">{t('wolvesHint')}</p>
           {/if}
           {#if prompt.pack}
-            <ul class="mb-3 space-y-1 rounded-xl bg-wolf/15 p-3 text-sm">
-              {#each prompt.pack as member (member.id)}
-                <li>
-                  🐺 {names(member.id)}{member.picks.length
-                    ? ` → ${member.picks.map(names).join(', ')}`
-                    : ''}
-                </li>
-              {/each}
-            </ul>
+            <!-- Wolves' turn only: who the pack is, who is targeted and by whom. -->
+            <div class="mb-3 space-y-1 rounded-xl bg-wolf/15 p-3 text-sm">
+              <p>
+                🐺 <span class="font-semibold">{t('packMembers')}:</span>
+                {prompt.pack
+                  .map((m) => (m.id === conn.you ? `${names(m.id)} (${t('you')})` : names(m.id)))
+                  .join(', ')}
+              </p>
+              {#if wolfHelp}
+                {#each wolfHelp.targets as target (target.id)}
+                  <p>
+                    🎯 <span class="font-semibold">{names(target.id)}</span>
+                    ← {target.by.map((id) => (id === conn.you ? t('you') : names(id))).join(', ')}
+                    <span class="text-slate-400">({target.by.length}/{wolfHelp.size})</span>
+                  </p>
+                {/each}
+                {#if wolfHelp.waiting.length}
+                  <p class="text-slate-400">
+                    ⏳ {t('packWaiting')}:
+                    {wolfHelp.waiting
+                      .map((id) => (id === conn.you ? t('you') : names(id)))
+                      .join(', ')}
+                  </p>
+                {/if}
+              {/if}
+            </div>
           {/if}
           {#if wolfHelp && !wolfHelp.solo}
             <p

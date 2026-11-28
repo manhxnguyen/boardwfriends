@@ -262,7 +262,27 @@ export type OneNightPhaseView =
   | { kind: 'vote'; endsAt: number; voted: number; total: number }
   | { kind: 'over'; winners: Winner[] };
 
+/** One Night: what happened during the night, revealed with the result. */
+export type OneNightEvent =
+  | { k: 'doppel'; actor: string; target: string; role: OneNightRoleId }
+  /** The werewolves woke and saw each other (one id: a lone wolf). */
+  | { k: 'wolves'; ids: string[] }
+  | { k: 'lone-wolf'; actor: string; index: number; role: OneNightRoleId }
+  | { k: 'minion'; actor: string; wolves: string[] }
+  | { k: 'masons'; ids: string[] }
+  | { k: 'seer'; actor: string; target: string; role: OneNightRoleId }
+  | { k: 'seer-center'; actor: string; cards: { index: number; role: OneNightRoleId }[] }
+  | { k: 'robber'; actor: string; target: string; took: OneNightRoleId }
+  | { k: 'troublemaker'; actor: string; a: string; b: string }
+  /** `auto`: time ran out and the app picked the center card [AD]. */
+  | { k: 'drunk'; actor: string; index: number; auto: boolean }
+  | { k: 'insomniac'; actor: string; role: OneNightRoleId }
+  /** Woke up but chose to do nothing. */
+  | { k: 'idle'; actor: string; call: string };
+
 export interface OneNightResult {
+  /** The night, step by step (older saved games: missing). */
+  story?: OneNightEvent[];
   original: Record<string, OneNightRoleId>;
   final: Record<string, OneNightRoleId>;
   center: OneNightRoleId[];

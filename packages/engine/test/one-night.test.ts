@@ -473,3 +473,23 @@ describe('secrecy', () => {
     expect(oneNightView(sim.game, 'p5', sim.now).result?.original.p1).toBe('werewolf');
   });
 });
+
+describe('night story (end-of-game recap)', () => {
+  it('records every wake-up and action, and reveals it with the result', () => {
+    const sim = started().untilCall('werewolf').act('p1', [], [2]);
+    sim.untilCall('robber').act('p3', ['p1']);
+    sim.untilCall('troublemaker').act('p4', ['p2', 'p5']);
+    // The Seer let the time run out; the Drunk sits in the center and nobody acts for it.
+    sim.vote({ p1: 'p3', p2: 'p3', p3: 'p1', p4: 'p3', p5: 'p3' });
+
+    expect(sim.game.story).toEqual([
+      { k: 'wolves', ids: ['p1'] },
+      { k: 'lone-wolf', actor: 'p1', index: 2, role: 'villager' },
+      { k: 'idle', actor: 'p2', call: 'seer' },
+      { k: 'robber', actor: 'p3', target: 'p1', took: 'werewolf' },
+      { k: 'troublemaker', actor: 'p4', a: 'p2', b: 'p5' },
+    ]);
+    expect(sim.game.result?.story).toEqual(sim.game.story);
+    expect(oneNightView(sim.game, 'p2', sim.now).result?.story).toHaveLength(5);
+  });
+});

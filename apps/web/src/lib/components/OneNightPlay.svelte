@@ -8,6 +8,7 @@
   import HoldToReveal from './HoldToReveal.svelte';
   import Notebook from './Notebook.svelte';
   import OneNightCard from './OneNightCard.svelte';
+  import OneNightRecap from './OneNightRecap.svelte';
   import PlayerPicker from './PlayerPicker.svelte';
 
   /** Phone screen for One Night Werewolf (always app-moderated). */
@@ -222,6 +223,9 @@
           {t('centerLabel')}: {result.center.map(roleName).join(' · ')}
         </p>
       </section>
+      <div class="mt-4">
+        <OneNightRecap {result} {names} />
+      </div>
     {/if}
 
     {#if isHost && phase.kind !== 'reveal' && phase.kind !== 'over'}
