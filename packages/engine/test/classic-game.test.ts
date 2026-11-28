@@ -410,6 +410,21 @@ describe('day: nominate, second, vote (UW-VOTE)', () => {
     expect(sim.game.cues.at(-1)!.cue).toEqual({ k: 'defense', nominee: 'p1', seconds: 1 });
   });
 
+  it('warns 10 seconds before the defense ends, then opens the vote', () => {
+    const sim = started().untilDay(1);
+    sim.game.timings.defenseMs = 30_000;
+    sim.do({ type: 'nominate', by: 'p7', target: 'p1' }).do({ type: 'second', by: 'p8' });
+    const endsAt = (sim.game.phase as { sub: { endsAt: number } }).sub.endsAt;
+    expect(classicDeadline(sim.game)).toBe(endsAt - 10_000);
+    sim.now = endsAt - 10_000;
+    sim.do({ type: 'tick' });
+    expect(sim.game.cues.at(-1)!.cue).toEqual({ k: 'time-warning', seconds: 10 });
+    expect(sim.game.phase).toMatchObject({ sub: { kind: 'defense' } });
+    sim.now = endsAt;
+    sim.do({ type: 'tick' });
+    expect(sim.game.phase).toMatchObject({ sub: { kind: 'voting' } });
+  });
+
   it('pauses the discussion clock during a nomination', () => {
     const sim = started().untilDay(1);
     sim.now += 20_000;

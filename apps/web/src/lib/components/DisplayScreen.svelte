@@ -16,6 +16,7 @@
   import { parseVoiceCommand, type VoiceCommand } from '../voice-commands.ts';
   import { WakeLock } from '../wakeLock.svelte.ts';
   import Countdown from './Countdown.svelte';
+  import FinalCountdown from './FinalCountdown.svelte';
   import CopyLinkButton from './CopyLinkButton.svelte';
   import LangToggle from './LangToggle.svelte';
   import RulesButton from './RulesButton.svelte';
@@ -290,6 +291,11 @@
 
       {#if play.kind === 'classic'}
         {@const phase = play.phase}
+        {#if phase.kind === 'day' && phase.sub?.kind === 'defense'}
+          <div class="mt-4 flex justify-center">
+            <FinalCountdown {endsAt} serverNow={() => conn.serverNow()} big />
+          </div>
+        {/if}
         {#if phase.kind === 'day' && phase.sub}
           <p class="mt-4 text-2xl text-slate-200">
             {#if phase.sub.kind === 'voting'}

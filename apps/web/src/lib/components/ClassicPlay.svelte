@@ -6,6 +6,7 @@
   import { ROLE_ICON, ROLE_TEXT, TEAM_TEXT } from '../content/roles.ts';
   import { i18n, t, type MessageKey } from '../i18n.svelte.ts';
   import Countdown from './Countdown.svelte';
+  import FinalCountdown from './FinalCountdown.svelte';
   import HoldToReveal from './HoldToReveal.svelte';
   import Notebook from './Notebook.svelte';
   import PlayerPicker from './PlayerPicker.svelte';
@@ -400,6 +401,19 @@
             <p class="text-center text-lg">
               🗣️ {t('defenseTitle', { nominee: names(phase.sub.nominee) })}
             </p>
+            <!-- Same big clock as the day/night timer, then a 10 → 1 countdown. -->
+            <div class="mt-2 flex flex-col items-center gap-2">
+              <Countdown
+                endsAt={view.paused ? null : phase.sub.endsAt}
+                serverNow={() => conn.serverNow()}
+                big
+              />
+              <FinalCountdown
+                endsAt={view.paused ? null : phase.sub.endsAt}
+                serverNow={() => conn.serverNow()}
+                vibrate
+              />
+            </div>
           {:else if phase.sub?.kind === 'voting'}
             <p class="text-center text-slate-300">
               {t('votesProgress', { n: String(phase.sub.voted), total: String(phase.sub.total) })}

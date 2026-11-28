@@ -63,7 +63,8 @@ export const DEFAULT_TIMINGS: ClassicTimings = {
 
 type DaySub =
   | { kind: 'nominated'; by: string | null; nominee: string; endsAt: number }
-  | { kind: 'defense'; nominee: string; endsAt: number }
+  /** `warned`: the 10-second warning has been given (or the defense is too short for one). */
+  | { kind: 'defense'; nominee: string; endsAt: number; warned?: boolean }
   | {
       kind: 'voting';
       nominee: string;
@@ -280,6 +281,7 @@ export function classicDeadline(g: ClassicGame): number | null {
     case 'dusk':
       return p.endsAt;
     case 'day':
+      if (p.sub?.kind === 'defense' && !p.sub.warned) return p.sub.endsAt - DEFENSE_WARNING_MS;
       if (p.sub) return p.sub.endsAt;
       if (p.endsAt === null) return null;
       return p.warned ? p.endsAt : p.endsAt - g.timings.warningMs;
@@ -288,6 +290,9 @@ export function classicDeadline(g: ClassicGame): number | null {
 
 // ---------------------------------------------------------------------------
 // Time
+
+/** "10 seconds left" during a defense: spoken, and a big countdown on every screen. */
+export const DEFENSE_WARNING_MS = 10_000;
 
 function advance(g: ClassicGame, now: number) {
   for (let guard = 0; guard < 200; guard++) {
@@ -318,6 +323,11 @@ function onDeadline(g: ClassicGame, at: number) {
       if (sub?.kind === 'nominated') {
         cue(g, { k: 'no-second', nominee: sub.nominee });
         return resumeDiscussion(g, at);
+      }
+      if (sub?.kind === 'defense' && !sub.warned) {
+        sub.warned = true;
+        cue(g, { k: 'time-warning', seconds: DEFENSE_WARNING_MS / 1000 });
+        return;
       }
       if (sub?.kind === 'defense') return startVoting(g, at);
       if (sub?.kind === 'voting') return resolveVote(g, at);
@@ -631,7 +641,12 @@ function second(g: ClassicGame, by: string | null, now: number): ClassicResult {
     if (!g.alive[by] || by === sub.by || by === sub.nominee) return fail('not_allowed');
     if (g.memory.silenced === by) return fail('not_allowed');
   }
-  p.sub = { kind: 'defense', nominee: sub.nominee, endsAt: now + g.timings.defenseMs };
+  p.sub = {
+    kind: 'defense',
+    nominee: sub.nominee,
+    endsAt: now + g.timings.defenseMs,
+    warned: g.timings.defenseMs <= DEFENSE_WARNING_MS,
+  };
   cue(g, { k: 'defense', nominee: sub.nominee, seconds: Math.round(g.timings.defenseMs / 1000) });
   return ok(g);
 }
