@@ -1,4 +1,13 @@
-import type { ClassicRoleId, ErrorCode, GameView, RoomView, SetupView } from '@bwf/protocol';
+import {
+  CHAT_MAX_LENGTH,
+  type ChatEntry,
+  type ClassicRoleId,
+  type ErrorCode,
+  type GameClock,
+  type GameView,
+  type RoomView,
+  type SetupView,
+} from '@bwf/protocol';
 import {
   applyClassic,
   classicDeadline,
@@ -54,13 +63,22 @@ export type GameState =
       /** playerId → card. The moderator and late joiners have no entry. */
       assignments: Record<string, ClassicRoleId>;
       seen: string[];
+      /** Night/day counter driven by the moderator (saved rooms: missing = not started). */
+      clock?: GameClock | null;
+      /** Players the moderator marked as eliminated. */
+      dead?: string[];
     }
   | { phase: 'playing'; setup: Setup; round: number; play: Play };
 
 export interface RoomState {
   lobby: LobbyState;
   game: GameState;
+  /** Chat of eliminated players for the current round (saved rooms: missing = empty). */
+  chat?: ChatEntry[];
 }
+
+/** Messages kept per round; older ones drop off. */
+export const CHAT_HISTORY = 100;
 
 export type VoiceCommand = 'nominate' | 'second' | 'start-vote' | 'pause' | 'resume' | 'end-day';
 
@@ -88,6 +106,9 @@ export type RoomAction =
   | { type: 'deal'; by: string }
   | { type: 'seen'; playerId: string }
   | { type: 'reset'; by: string }
+  | { type: 'clock'; by: string; step: 1 | -1 }
+  | { type: 'mark-dead'; by: string; playerId: string; dead: boolean }
+  | { type: 'chat'; by: string; text: string }
   | PlayAction;
 
 export type RoomEvent = LobbyEvent | { type: 'dealt'; round: number } | { type: 'reset' };
@@ -109,6 +130,12 @@ export function applyRoom(state: RoomState, action: RoomAction, ctx: RoomContext
       return markSeen(state, action.playerId, ctx);
     case 'reset':
       return reset(state, action.by, ctx);
+    case 'clock':
+      return moveClock(state, action.by, action.step, ctx);
+    case 'mark-dead':
+      return markDead(state, action.by, action.playerId, action.dead, ctx);
+    case 'chat':
+      return chat(state, action.by, action.text, ctx);
     case 'reorder':
       if (state.game.phase !== 'setup') return { ok: false, error: 'wrong_phase' };
       return lobbyStep(state, action, ctx);
@@ -179,8 +206,70 @@ export function roomView(
   return {
     lobby: lobbyView(state.lobby, displays),
     game: gameView(state, viewer, now),
+    deadChat: viewer !== null && canDeadChat(state, viewer) ? [...(state.chat ?? [])] : null,
     display: viewer === null,
   };
+}
+
+/** Eliminated players (manual: marked by the moderator) and the human moderator. */
+export function canDeadChat(state: RoomState, playerId: string): boolean {
+  const { game } = state;
+  if (game.phase === 'dealt') {
+    return game.setup.moderatorId === playerId || (game.dead ?? []).includes(playerId);
+  }
+  if (game.phase === 'playing' && game.play.kind === 'classic') {
+    return game.play.game.alive[playerId] === false;
+  }
+  return false; // One Night: nobody is out until the very end.
+}
+
+function isModeratorOrHost(state: RoomState, by: string): boolean {
+  return state.game.setup.moderatorId === by || state.lobby.hostId === by;
+}
+
+/** Manual mode: not started → night 1 → day 1 → night 2 → … (and back). */
+function moveClock(state: RoomState, by: string, step: 1 | -1, ctx: RoomContext): RoomResult {
+  const { game } = state;
+  if (game.phase !== 'dealt') return { ok: false, error: 'wrong_phase' };
+  if (!isModeratorOrHost(state, by)) return { ok: false, error: 'not_allowed' };
+  // Position: 0 = not started, 1 = night 1, 2 = day 1, 3 = night 2…
+  const at = (c: GameClock | null | undefined) =>
+    c ? (c.n - 1) * 2 + (c.kind === 'night' ? 1 : 2) : 0;
+  const next = Math.max(0, at(game.clock) + step);
+  const clock: GameClock | null =
+    next === 0 ? null : { kind: next % 2 === 1 ? 'night' : 'day', n: Math.ceil(next / 2) };
+  return { ok: true, state: touch({ ...state, game: { ...game, clock } }, ctx), events: [] };
+}
+
+function markDead(
+  state: RoomState,
+  by: string,
+  playerId: string,
+  dead: boolean,
+  ctx: RoomContext,
+): RoomResult {
+  const { game } = state;
+  if (game.phase !== 'dealt') return { ok: false, error: 'wrong_phase' };
+  if (!isModeratorOrHost(state, by)) return { ok: false, error: 'not_allowed' };
+  if (!(playerId in game.assignments)) return { ok: false, error: 'unknown_player' };
+  const others = (game.dead ?? []).filter((id) => id !== playerId);
+  const next = dead ? [...others, playerId] : others;
+  return { ok: true, state: touch({ ...state, game: { ...game, dead: next } }, ctx), events: [] };
+}
+
+function chat(state: RoomState, by: string, text: string, ctx: RoomContext): RoomResult {
+  if (!canDeadChat(state, by)) return { ok: false, error: 'not_allowed' };
+  const clean = text.trim().slice(0, CHAT_MAX_LENGTH);
+  if (!clean) return { ok: false, error: 'invalid_action' };
+  const history = state.chat ?? [];
+  const entry: ChatEntry = {
+    seq: (history.at(-1)?.seq ?? 0) + 1,
+    from: by,
+    text: clean,
+    at: ctx.now,
+  };
+  const next = [...history, entry].slice(-CHAT_HISTORY);
+  return { ok: true, state: touch({ ...state, chat: next }, ctx), events: [] };
 }
 
 function gameView(state: RoomState, viewer: string | null, now: number): GameView {
@@ -209,6 +298,8 @@ function gameView(state: RoomState, viewer: string | null, now: number): GameVie
     youSeen: viewer ? game.seen.includes(viewer) : false,
     seenCount: game.seen.length,
     dealtCount: Object.keys(game.assignments).length,
+    clock: game.clock ?? null,
+    dead: [...(game.dead ?? [])],
     assignments: isModerator
       ? state.lobby.players
           .filter((p) => game.assignments[p.id])
@@ -347,7 +438,8 @@ function reset(state: RoomState, by: string, ctx: RoomContext): RoomResult {
   const { setup, round } = state.game;
   return {
     ok: true,
-    state: touch({ ...state, game: { phase: 'setup', setup, round } }, ctx),
+    // A new round starts a new chat for the eliminated.
+    state: touch({ ...state, chat: [], game: { phase: 'setup', setup, round } }, ctx),
     events: [{ type: 'reset' }],
   };
 }

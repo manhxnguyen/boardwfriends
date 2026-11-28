@@ -287,3 +287,67 @@ describe('players leaving', () => {
     expect(state.game.setup.moderatorId).toBeNull();
   });
 });
+
+describe('manual mode: night/day counter and eliminations', () => {
+  it('the moderator moves the counter; everyone sees it', () => {
+    const state = run(
+      [
+        { type: 'clock', by: 'p1', step: 1 },
+        { type: 'clock', by: 'p1', step: 1 },
+        { type: 'clock', by: 'p1', step: 1 },
+        { type: 'clock', by: 'p1', step: -1 },
+      ],
+      makeCtx(),
+      dealtRoom(),
+    );
+    const view = roomView(state, 'p5', T0).game;
+    expect(view).toMatchObject({ phase: 'dealt', clock: { kind: 'day', n: 1 } });
+    expectError(state, { type: 'clock', by: 'p5', step: 1 }, 'not_allowed');
+  });
+
+  it('eliminated players are public and only the moderator marks them', () => {
+    const state = run(
+      [{ type: 'mark-dead', by: 'p1', playerId: 'p3', dead: true }],
+      makeCtx(),
+      dealtRoom(),
+    );
+    expect(roomView(state, 'p5', T0).game).toMatchObject({ dead: ['p3'] });
+    expectError(state, { type: 'mark-dead', by: 'p5', playerId: 'p4', dead: true }, 'not_allowed');
+  });
+});
+
+describe('chat of the eliminated', () => {
+  it('only the eliminated and the moderator read and write it', () => {
+    let state = run(
+      [{ type: 'mark-dead', by: 'p1', playerId: 'p3', dead: true }],
+      makeCtx(),
+      dealtRoom(),
+    );
+    expectError(state, { type: 'chat', by: 'p4', text: 'hi' }, 'not_allowed');
+    state = run([{ type: 'chat', by: 'p3', text: '  Sói là Chi  ' }], makeCtx(), state);
+
+    expect(roomView(state, 'p3', T0).deadChat).toEqual([
+      { seq: 1, from: 'p3', text: 'Sói là Chi', at: T0 },
+    ]);
+    expect(roomView(state, 'p1', T0).deadChat).toHaveLength(1); // moderator
+    expect(roomView(state, 'p4', T0).deadChat).toBeNull(); // living player
+    expect(roomView(state, null, T0).deadChat).toBeNull(); // narrator display
+
+    // Brought back by the moderator: no longer in the chat.
+    state = run([{ type: 'mark-dead', by: 'p1', playerId: 'p3', dead: false }], makeCtx(), state);
+    expect(roomView(state, 'p3', T0).deadChat).toBeNull();
+  });
+
+  it('a new round starts an empty chat', () => {
+    let state = run(
+      [
+        { type: 'mark-dead', by: 'p1', playerId: 'p3', dead: true },
+        { type: 'chat', by: 'p3', text: 'a' },
+      ],
+      makeCtx(),
+      dealtRoom(),
+    );
+    state = run([{ type: 'reset', by: 'p1' }], makeCtx(), state);
+    expect(state.chat).toEqual([]);
+  });
+});

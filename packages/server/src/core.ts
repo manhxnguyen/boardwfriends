@@ -342,6 +342,12 @@ function toAction(playerId: string, m: Exclude<ClientMessage, { t: 'hello' }>): 
       return { type: 'accuse', playerId, target: m.target };
     case 'voice':
       return null; // Only narrator displays may send voice commands.
+    case 'clock':
+      return { type: 'clock', by: playerId, step: m.step };
+    case 'mark-dead':
+      return { type: 'mark-dead', by: playerId, playerId: m.playerId, dead: m.dead };
+    case 'chat':
+      return { type: 'chat', by: playerId, text: m.text };
   }
 }
 

@@ -6,7 +6,7 @@ export * from './roles.ts';
 export * from './views.ts';
 
 /** Bump whenever a message shape changes incompatibly. Clients on another version are rejected. */
-export const PROTOCOL_VERSION = 8;
+export const PROTOCOL_VERSION = 9;
 
 /** Room codes avoid look-alike characters (I/O/0/1) so they are easy to read aloud and type. */
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -15,6 +15,7 @@ export const ROOM_CODE_PATTERN = new RegExp(`^[${ROOM_CODE_ALPHABET}]{${ROOM_COD
 
 export const MAX_PLAYERS = 20;
 export const NAME_MAX_LENGTH = 20;
+export const CHAT_MAX_LENGTH = 200;
 export const DAY_MINUTES_MIN = 1;
 export const DAY_MINUTES_MAX = 15;
 /** Classic auto: how long a nominee may defend themselves, in minutes (AD-AUTO-06). */
@@ -131,6 +132,23 @@ export const VoteMessage = v.object({
 /** One Night: point at a player in the final vote. */
 export const AccuseMessage = v.object({ t: v.literal('accuse'), target: PlayerId });
 
+/** Manual mode, moderator: move the night/day counter forward (1) or back (-1). */
+export const ClockMessage = v.object({
+  t: v.literal('clock'),
+  step: v.union([v.literal(1), v.literal(-1)]),
+});
+/** Manual mode, moderator: mark a player as eliminated (or undo). */
+export const MarkDeadMessage = v.object({
+  t: v.literal('mark-dead'),
+  playerId: PlayerId,
+  dead: v.boolean(),
+});
+/** Chat of eliminated players. */
+export const ChatMessage = v.object({
+  t: v.literal('chat'),
+  text: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(CHAT_MAX_LENGTH)),
+});
+
 /** Narrator display: a command recognised from speech (only when setup.voice is on). */
 export const VoiceMessage = v.object({
   t: v.literal('voice'),
@@ -157,6 +175,9 @@ export const ClientMessage = v.variant('t', [
   VoteMessage,
   AccuseMessage,
   VoiceMessage,
+  ClockMessage,
+  MarkDeadMessage,
+  ChatMessage,
 ]);
 export type ClientMessage = v.InferOutput<typeof ClientMessage>;
 /** Input shape (before defaults are applied), useful for clients building messages. */

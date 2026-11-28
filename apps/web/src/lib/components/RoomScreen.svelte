@@ -20,6 +20,7 @@
   import OneNightDeck from './OneNightDeck.svelte';
   import OneNightPlay from './OneNightPlay.svelte';
   import PlayerList from './PlayerList.svelte';
+  import DeadChat from './DeadChat.svelte';
   import QrCard from './QrCard.svelte';
   import RulesButton from './RulesButton.svelte';
   import RoleCard from './RoleCard.svelte';
@@ -254,9 +255,30 @@
         roles={game.setup?.roles ?? {}}
         assignments={game.assignments}
         firstNightKill={game.setup?.firstNightKill === true}
+        clock={game.clock ?? null}
+        dead={game.dead ?? []}
+        onClock={(step) => conn.send({ t: 'clock', step })}
+        onToggleDead={(playerId, dead) => conn.send({ t: 'mark-dead', playerId, dead })}
       />
     {:else}
       <!-- ───────────── Manual: player ───────────── -->
+      {#if game.clock}
+        <!-- Night/day set by the moderator, visible to everyone. -->
+        <p class="mt-4 text-center text-2xl font-bold">
+          {game.clock.kind === 'night' ? '🌙' : '☀️'}
+          {t(game.clock.kind === 'night' ? 'phaseNight' : 'phaseDay', { n: String(game.clock.n) })}
+        </p>
+      {/if}
+      {#if conn.you && (game.dead ?? []).includes(conn.you)}
+        <p class="mt-2 text-center font-semibold text-wolf">💀 {t('youAreOut')}</p>
+      {/if}
+      {#if (game.dead ?? []).length}
+        <p class="mt-1 text-center text-sm text-slate-400">
+          💀 {(game.dead ?? [])
+            .map((id) => room.lobby.players.find((p) => p.id === id)?.name ?? '?')
+            .join(', ')}
+        </p>
+      {/if}
       <section class="mt-6 flex flex-col items-center gap-4 text-center">
         {#if game.yourRole}
           <p class="text-sm font-semibold text-moon">🤫 {t('keepSecret')}</p>
@@ -275,6 +297,17 @@
       {#if game.setup}
         <div class="mt-6"><DeckSummary roles={game.setup.roles} /></div>
       {/if}
+    {/if}
+
+    {#if room.deadChat}
+      <div class="mt-6">
+        <DeadChat
+          {conn}
+          messages={room.deadChat}
+          names={(id) => room.lobby.players.find((p) => p.id === id)?.name ?? '?'}
+          moderator={isModerator}
+        />
+      </div>
     {/if}
 
     {#if game.phase !== 'setup' && conn.isHost}

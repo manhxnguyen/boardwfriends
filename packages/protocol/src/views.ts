@@ -330,12 +330,34 @@ export type GameView =
       seenCount: number;
       dealtCount: number;
       assignments: Assignment[] | null;
+      /** Night/day set by the moderator (null before they start night 1). Public. */
+      clock: GameClock | null;
+      /** Players the moderator marked as eliminated. Public. */
+      dead: string[];
     }
   | { phase: 'playing'; round: number; setup: SetupView | null; play: ClassicView | OneNightView };
+
+export interface GameClock {
+  kind: 'night' | 'day';
+  n: number;
+}
+
+/** A message in the chat of eliminated players. */
+export interface ChatEntry {
+  seq: number;
+  from: string;
+  text: string;
+  at: number;
+}
 
 export interface RoomView {
   lobby: LobbyView;
   game: GameView;
+  /**
+   * Chat of eliminated players (and the human moderator). Null for everyone else, living players
+   * and the narrator display included: they never receive it.
+   */
+  deadChat: ChatEntry[] | null;
   /** True when this view is for a narrator display rather than a player. */
   display: boolean;
 }

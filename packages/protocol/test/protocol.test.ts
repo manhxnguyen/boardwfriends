@@ -104,3 +104,12 @@ describe('room codes', () => {
     expect(isRoomCode('ABCDE')).toBe(false);
   });
 });
+
+describe('chat of the eliminated', () => {
+  it('trims and limits the text', () => {
+    const parse = (text: string) => parseClientMessage(JSON.stringify({ t: 'chat', text }));
+    expect(parse('  hi  ')).toEqual({ ok: true, value: { t: 'chat', text: 'hi' } });
+    expect(parse('   ').ok).toBe(false);
+    expect(parse('x'.repeat(201)).ok).toBe(false);
+  });
+});

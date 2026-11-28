@@ -1,10 +1,9 @@
 <script lang="ts">
   import { nightScript, roleDef, type ScriptStep } from '@bwf/engine';
-  import type { Assignment, LobbyView, RoleCounts } from '@bwf/protocol';
+  import type { Assignment, GameClock, LobbyView, RoleCounts } from '@bwf/protocol';
   import { FENCE_COLOR, ROLE_ICON, ROLE_TEXT } from '../content/roles.ts';
   import { SCRIPT } from '../content/script.ts';
   import { i18n, t } from '../i18n.svelte.ts';
-  import { load, save } from '../storage.ts';
 
   /** Screen for the human moderator: the whole table plus the narration script. */
   let {
@@ -14,6 +13,10 @@
     roles,
     assignments,
     firstNightKill = false,
+    clock,
+    dead,
+    onClock,
+    onToggleDead,
   }: {
     code: string;
     round: number;
@@ -21,27 +24,35 @@
     roles: RoleCounts;
     assignments: Assignment[];
     firstNightKill?: boolean;
+    /** Night/day counter everyone sees; the moderator moves it. */
+    clock: GameClock | null;
+    /** Eliminated players (shared: they get the chat of the dead). */
+    dead: string[];
+    onClock: (step: 1 | -1) => void;
+    onToggleDead: (playerId: string, dead: boolean) => void;
   } = $props();
 
   type Tab = 'table' | 'first' | 'later' | 'day';
   let tab = $state<Tab>('first');
   let hidden = $state(false);
 
-  // Elimination marks are a private notepad, kept per room and round on this device only.
-  const deadKey = $derived(`bwf.dead.${code}.${round}`);
-  let dead = $state<string[]>([]);
-  $effect(() => {
-    try {
-      dead = JSON.parse(load(deadKey) ?? '[]') as string[];
-    } catch {
-      dead = [];
-    }
-  });
-
+  // Elimination marks live on the server: every phone shows who is out, and the eliminated
+  // players get their own chat.
   function toggleDead(playerId: string) {
-    dead = dead.includes(playerId) ? dead.filter((id) => id !== playerId) : [...dead, playerId];
-    save(deadKey, JSON.stringify(dead));
+    onToggleDead(playerId, !dead.includes(playerId));
   }
+  void code;
+  void round;
+
+  const clockLabel = (c: GameClock | null) =>
+    c
+      ? `${c.kind === 'night' ? '🌙' : '☀️'} ${t(c.kind === 'night' ? 'phaseNight' : 'phaseDay', { n: String(c.n) })}`
+      : t('clockNotStarted');
+  /** What pressing "next" leads to. */
+  const nextClock = $derived.by((): GameClock => {
+    if (!clock) return { kind: 'night', n: 1 };
+    return clock.kind === 'night' ? { kind: 'day', n: clock.n } : { kind: 'night', n: clock.n + 1 };
+  });
 
   const nameOf = (id: string) => lobby.players.find((p) => p.id === id)?.name ?? '?';
   const script = $derived(SCRIPT[i18n.lang]);
@@ -85,6 +96,27 @@
     </li>
   </ol>
 {/snippet}
+
+<!-- Night/day counter shown on every phone. -->
+<section class="mt-4 flex items-center gap-2 rounded-xl bg-night-900 p-3">
+  <button
+    type="button"
+    class="min-h-11 min-w-11 rounded-full bg-night-800 text-lg disabled:opacity-40"
+    aria-label={t('clockBack')}
+    disabled={!clock}
+    onclick={() => onClock(-1)}
+  >
+    ◀
+  </button>
+  <p class="flex-1 text-center text-lg font-bold">{clockLabel(clock)}</p>
+  <button
+    type="button"
+    class="min-h-11 rounded-full bg-moon px-4 text-sm font-bold text-night-950"
+    onclick={() => onClock(1)}
+  >
+    {t('clockNext', { label: clockLabel(nextClock) })} ▶
+  </button>
+</section>
 
 <section class="mt-4">
   <div class="sticky top-0 z-10 -mx-4 bg-night-950/95 px-4 py-2 backdrop-blur">
