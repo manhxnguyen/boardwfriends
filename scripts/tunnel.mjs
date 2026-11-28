@@ -23,7 +23,7 @@ const VIENEU_URL = (process.env.VIENEU_URL ?? 'http://127.0.0.1:8000').replace(/
 // The same key in every terminal: VIENEU_API_KEY, or the file made once with
 // `openssl rand -hex 24 > ~/.vieneu-key`.
 const KEY_FILE = join(homedir(), '.vieneu-key');
-const KEY = process.env.VIENEU_API_KEY || readKeyFile();
+let KEY = process.env.VIENEU_API_KEY || readKeyFile();
 function readKeyFile() {
   try {
     return readFileSync(KEY_FILE, 'utf8').trim();
@@ -112,8 +112,21 @@ try {
 } catch {
   fail('cloudflared is not installed. Install it with: brew install cloudflared');
 }
-const withKey = await status(`${VIENEU_URL}/v1/voices`, { Authorization: `Bearer ${KEY}` });
+let withKey = await status(`${VIENEU_URL}/v1/voices`, { Authorization: `Bearer ${KEY}` });
 if (withKey === 0) fail(`VieNeu is not answering at ${VIENEU_URL}. Start it first.`);
+// An old `export VIENEU_API_KEY=…` left in this terminal wins over the file; try the file too.
+const fileKey = readKeyFile();
+if ((withKey === 401 || withKey === 403) && fileKey && fileKey !== KEY) {
+  const retry = await status(`${VIENEU_URL}/v1/voices`, { Authorization: `Bearer ${fileKey}` });
+  if (retry === 200) {
+    console.log(
+      `⚠️  VIENEU_API_KEY in this terminal is an old key; using ${KEY_FILE}.\n` +
+        '   Run "unset VIENEU_API_KEY" to stop seeing this.',
+    );
+    KEY = fileKey;
+    withKey = retry;
+  }
+}
 if (withKey === 401 || withKey === 403)
   fail(
     `VieNeu refused the key. Start VieNeu with the same one:\n` +
