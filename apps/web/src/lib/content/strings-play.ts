@@ -75,6 +75,9 @@ export const playVi = {
   wolvesTitle: 'Chọn nạn nhân',
   wolvesTitleDouble: 'Chọn 2 nạn nhân',
   wolvesHint: 'Cả bầy phải chọn trùng nhau, nếu không đêm nay không ai bị loại.',
+  wolvesAgreed: 'Cả bầy đã chọn trùng nhau.',
+  wolvesNotAgreed: 'Chưa trùng nhau: hết giờ mà chưa trùng thì đêm nay không ai bị loại.',
+  wolvesFollow: 'Chọn giống {name}',
   wolvesDouble:
     'Sói con đã chết: đêm nay cả bầy được loại 2 người. Chỉ Sói thấy dòng này. Cả bầy phải chọn trùng cả 2 người.',
   meetOnly: 'Đêm đầu: chỉ nhận mặt đồng bọn.',
@@ -275,6 +278,9 @@ export const playEn: Record<PlayKey, string> = {
   wolvesTitle: 'Choose a victim',
   wolvesTitleDouble: 'Choose 2 victims',
   wolvesHint: 'The whole pack must agree, or nobody dies tonight.',
+  wolvesAgreed: 'The whole pack agrees.',
+  wolvesNotAgreed: 'Not agreed yet: if time runs out, nobody dies tonight.',
+  wolvesFollow: 'Pick like {name}',
   wolvesDouble:
     'The Wolf Cub is dead: tonight the pack eliminates 2 players. Only wolves see this. The whole pack must pick the same 2.',
   meetOnly: 'First night: just meet your pack.',

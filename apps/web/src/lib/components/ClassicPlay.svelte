@@ -21,6 +21,29 @@
 
   const names = (id: string) => lobby.players.find((p) => p.id === id)?.name ?? '?';
   const you = $derived(view.you);
+
+  // Wolves: help the pack agree (they must all pick the same target, UW-NIGHT-01).
+  const sameSet = (a: string[], b: string[]) =>
+    a.length === b.length && [...a].sort().join() === [...b].sort().join();
+  const wolfHelp = $derived.by(() => {
+    const prompt = you?.prompt;
+    if (prompt?.kind !== 'pick' || prompt.purpose !== 'wolves' || !prompt.pack || !prompt.count) {
+      return null;
+    }
+    const pack = prompt.pack;
+    const marks: Record<string, string[]> = {};
+    for (const m of pack) {
+      if (m.id === conn.you) continue;
+      for (const p of m.picks) (marks[p] ??= []).push(names(m.id));
+    }
+    const first = pack[0]?.picks ?? [];
+    const agreed = first.length === prompt.count && pack.every((m) => sameSet(m.picks, first));
+    const mine = pack.find((m) => m.id === conn.you)?.picks ?? prompt.selected;
+    const follow = pack.filter(
+      (m) => m.id !== conn.you && m.picks.length === prompt.count && !sameSet(m.picks, mine),
+    );
+    return { marks, agreed, follow, solo: pack.length === 1 };
+  });
   const phase = $derived(view.phase);
   const caption = $derived.by(() => {
     const last = view.cues.at(-1);
@@ -217,6 +240,29 @@
               {/each}
             </ul>
           {/if}
+          {#if wolfHelp && !wolfHelp.solo}
+            <p
+              class="mb-2 rounded-lg px-3 py-2 text-sm font-semibold {wolfHelp.agreed
+                ? 'bg-ok/15 text-ok'
+                : 'bg-moon/10 text-moon'}"
+              role="status"
+            >
+              {wolfHelp.agreed ? `✓ ${t('wolvesAgreed')}` : `⏳ ${t('wolvesNotAgreed')}`}
+            </p>
+            {#if wolfHelp.follow.length}
+              <div class="mb-3 flex flex-wrap gap-2">
+                {#each wolfHelp.follow as member (member.id)}
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-full bg-wolf/30 px-4 py-2 text-sm font-semibold"
+                    onclick={() => act(member.picks)}
+                  >
+                    🐺 {t('wolvesFollow', { name: names(member.id) })}
+                  </button>
+                {/each}
+              </div>
+            {/if}
+          {/if}
           <!-- New question → fresh picker (no stale local selection). -->
           {#key prompt.purpose}
             <PlayerPicker
@@ -225,6 +271,7 @@
               selected={prompt.selected}
               locked={prompt.locked}
               {names}
+              marks={wolfHelp?.marks ?? {}}
               onSubmit={(players) => act(players)}
             />
           {/key}

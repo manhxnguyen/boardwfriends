@@ -15,6 +15,7 @@
     locked = false,
     names,
     centerAlternative = false,
+    marks = {},
     onSubmit,
   }: {
     options: string[];
@@ -26,6 +27,8 @@
     names: (id: string) => string;
     /** Seer: either one player OR two center cards. */
     centerAlternative?: boolean;
+    /** Names to show under a player (wolves: which teammates picked them). */
+    marks?: Record<string, string[]>;
     onSubmit: (players: string[], center: number[]) => void;
   } = $props();
 
@@ -88,6 +91,11 @@
           onclick={() => togglePlayer(id)}
         >
           {names(id)}
+          {#if marks[id]?.length}
+            <span class="mt-0.5 block text-xs font-normal {on ? 'text-night-800' : 'text-wolf'}">
+              🐺 {marks[id]!.join(', ')}
+            </span>
+          {/if}
         </button>
       </li>
     {/each}
