@@ -81,6 +81,11 @@
       for (const entry of cues) {
         if (entry.seq <= lastSeq) continue;
         const text = cueText(entry.cue, i18n.lang, names, play.kind === 'one-night');
+        // The wolves' turn starts with a howl (narrator screen only; phones stay silent).
+        const cue = entry.cue;
+        if (cue.k === 'call-open' && (cue.call === 'wolves' || cue.call === 'werewolf')) {
+          narrator.effect('howl');
+        }
         if (text) {
           caption = text;
           narrator.speak(
@@ -434,6 +439,24 @@
     >
       🔁 {t('repeat')}
     </button>
+    <label class="flex items-center gap-2">
+      <input
+        type="checkbox"
+        class="size-5 accent-moon"
+        checked={narrator.sfx}
+        onchange={(e) => narrator.setSfx(e.currentTarget.checked)}
+      />
+      🐺 {t('sfxHowl')}
+    </label>
+    {#if narrator.sfx && narrator.enabled}
+      <button
+        type="button"
+        class="rounded-full bg-night-800 px-3 py-1.5"
+        onclick={() => narrator.effect('howl')}
+      >
+        {t('sfxTest')}
+      </button>
+    {/if}
     {#if !narrator.serverVieneu}
       <button
         type="button"

@@ -211,6 +211,8 @@ export const playVi = {
   localVoiceError:
     'Không thấy VieNeu trên máy này. Hãy chạy VieNeu và “pnpm voice” (xem README), cho phép trình duyệt truy cập mạng nội bộ, rồi bấm lại nút.',
   voiceDevice: 'Giọng của máy này',
+  sfxHowl: 'Tiếng sói hú',
+  sfxTest: 'Nghe thử tiếng hú',
   voiceVieneuError:
     'Không gọi được VieNeu (máy chủ giọng đọc đã tắt?). Đang dùng giọng dự phòng; chọn lại giọng để thử lại.',
   voiceCloudError:
@@ -435,6 +437,8 @@ export const playEn: Record<PlayKey, string> = {
   localVoiceError:
     'VieNeu was not found on this computer. Run VieNeu and “pnpm voice” (see the README), allow local network access, then press the button again.',
   voiceDevice: 'This device’s voices',
+  sfxHowl: 'Wolf howl',
+  sfxTest: 'Test the howl',
   voiceVieneuError:
     'VieNeu is not answering (is the voice server off?). Using a backup voice; pick the voice again to retry.',
   voiceCloudError: 'The Google voice is unavailable (offline or quota). Using this device’s voice.',

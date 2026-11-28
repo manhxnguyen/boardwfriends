@@ -1,11 +1,13 @@
 import type { TtsVoicesResponse, VieneuVoice } from '@bwf/server';
 import { plainText } from './content/narration.ts';
 import type { Lang } from './i18n.svelte.ts';
+import { playHowl } from './sfx.ts';
 import { serverInfo } from './server-info.svelte.ts';
 import { load, save } from './storage.ts';
 
 const VOICE_KEY = 'bwf.voice';
 const LOCAL_KEY = 'bwf.localVoice';
+const SFX_KEY = 'bwf.sfx';
 /** `pnpm voice` on the narrator's own computer (option B); localhost is allowed from https. */
 export const LOCAL_BRIDGE = 'http://localhost:8090';
 /** Special voice id for the cloud voice (Google Cloud TTS through our server). */
@@ -22,6 +24,8 @@ const SILENT_MP3 =
 interface QueueItem {
   text: string;
   lang: Lang;
+  /** A sound effect instead of a sentence. */
+  sfx?: 'howl';
   /** Audio being fetched ahead of time, so the next sentence starts without a pause. */
   audio?: Promise<string | null> | undefined;
   engine?: Engine;
@@ -60,6 +64,9 @@ export class Narrator {
   localVoice = $state(load(LOCAL_KEY) === '1');
   /** The bridge did not answer. */
   localError = $state(false);
+  /** Sound effects (the wolves' howl); on unless switched off on this screen. */
+  sfx = $state(load(SFX_KEY) !== '0');
+  #ctx: AudioContext | null = null;
   /** Where VieNeu audio comes from: '' (our server) or the local bridge. */
   #vieneuBase = '';
 
@@ -171,6 +178,24 @@ export class Narrator {
     this.#audio.src = SILENT_MP3;
     void this.#audio.play().catch(() => undefined);
     if (this.supported) speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+    try {
+      this.#ctx ??= new AudioContext();
+      void this.#ctx.resume();
+    } catch {
+      // No Web Audio: effects are skipped.
+    }
+  }
+
+  setSfx(on: boolean): void {
+    this.sfx = on;
+    save(SFX_KEY, on ? '1' : '0');
+  }
+
+  /** Queues a sound effect, played in order with the sentences (the howl before "Wolves, …"). */
+  effect(name: 'howl'): void {
+    if (!this.enabled || !this.sfx || !this.#ctx) return;
+    this.#queue.push({ text: '', lang: 'vi', sfx: name });
+    void this.#drain();
   }
 
   disable(): void {
@@ -220,6 +245,10 @@ export class Narrator {
       const item = this.#queue.shift()!;
       // Start generating the next sentence while this one plays (VieNeu takes ~0.5 s each).
       if (this.#queue[0]) this.#prefetch(this.#queue[0]);
+      if (item.sfx) {
+        if (this.#ctx) await playHowl(this.#ctx).catch(() => undefined);
+        continue;
+      }
       let done = false;
       while (!done) {
         this.#prefetch(item);
@@ -233,6 +262,7 @@ export class Narrator {
   }
 
   #prefetch(item: QueueItem): void {
+    if (item.sfx) return;
     const engine = this.#engineFor(item.lang);
     if (item.engine && sameEngine(item.engine, engine)) return;
     item.engine = engine;
