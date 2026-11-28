@@ -108,6 +108,20 @@
         onchange={(e) => set({ firstNightKill: e.currentTarget.checked })}
       />
     </label>
+    {#if setup.mode === 'auto'}
+      <label class="flex items-start justify-between gap-3">
+        <span>
+          <span class="block text-sm font-semibold">{t('wolfMajorityLabel')}</span>
+          <span class="block text-xs text-slate-400">{t('wolfMajorityHint')}</span>
+        </span>
+        <input
+          type="checkbox"
+          class="mt-1 size-6 shrink-0 accent-moon"
+          checked={setup.wolfMajority}
+          onchange={(e) => set({ wolfMajority: e.currentTarget.checked })}
+        />
+      </label>
+    {/if}
   {/if}
 
   {#if setup.game === 'one-night' || setup.mode === 'auto'}

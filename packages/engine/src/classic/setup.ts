@@ -22,6 +22,8 @@ export const EMPTY_SETUP: Setup = {
   reveal: 'role',
   // The group's house rule (decided 2026-11-21): wolves already hunt on night 1.
   firstNightKill: true,
+  // Official rule by default: the wolves must agree (UW-NIGHT-01).
+  wolfMajority: false,
   dayMinutes: 5,
   voice: false,
 };

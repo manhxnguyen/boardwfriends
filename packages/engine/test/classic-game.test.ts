@@ -35,6 +35,7 @@ class Sim {
     roles: ClassicRoleId[],
     reveal: 'role' | 'team' | 'none' = 'role',
     firstNightKill = false,
+    variant: { wolfMajority?: boolean; seed?: number } = {},
   ) {
     const seats = roles.map((_, i) => `p${i + 1}`);
     this.game = startClassic({
@@ -43,6 +44,7 @@ class Sim {
       deck: roles.reduce<Record<string, number>>((d, r) => ({ ...d, [r]: (d[r] ?? 0) + 1 }), {}),
       reveal,
       firstNightKill,
+      ...variant,
       dayMinutes: 1,
       timings: FAST,
     });
@@ -295,6 +297,10 @@ describe('wolves (UW-NIGHT-01..03)', () => {
     sim.act('p1', ['p7']).act('p2', ['p8']);
     sim.until((g) => g.phase.kind === 'dawn');
     expect(sim.living()).toHaveLength(8);
+  });
+
+  it('official rule by default: no majority vote', () => {
+    expect(new Sim(BASIC).game.wolfMajority).toBe(false);
   });
 
   it('see each other’s picks and may target a wolf', () => {
@@ -642,5 +648,62 @@ describe('pause', () => {
     sim.now = 10_500;
     sim.do({ type: 'pause', paused: false });
     expect(classicDeadline(sim.game)).toBe(endsAt + 10_000);
+  });
+});
+
+describe('room option: wolves vote by majority (AD-AUTO-14)', () => {
+  const PACK3: ClassicRoleId[] = [
+    'werewolf', // p1
+    'werewolf', // p2
+    'werewolf', // p3
+    'seer',
+    'villager', // p5
+    'villager', // p6
+    'villager', // p7
+    'villager',
+    'villager',
+  ];
+  const night2 = (roles: ClassicRoleId[], seed = 1) =>
+    new Sim(roles, 'role', false, { wolfMajority: true, seed })
+      .do({ type: 'start' })
+      .untilDay(1)
+      .do({ type: 'skip' })
+      .untilCall('wolves', 2);
+
+  it('the most picked player dies', () => {
+    const sim = night2(PACK3);
+    sim.act('p1', ['p5']).act('p2', ['p5']).act('p3', ['p6']);
+    sim.until((g) => g.phase.kind === 'dawn');
+    expect(sim.game.alive.p5).toBe(false);
+    expect(sim.game.alive.p6).toBe(true);
+  });
+
+  it('a lone pick is enough when the others do not choose', () => {
+    const sim = night2(PACK3);
+    sim.act('p2', ['p7']);
+    sim.until((g) => g.phase.kind === 'dawn');
+    expect(sim.game.alive.p7).toBe(false);
+  });
+
+  it('a tie is drawn at random among the tied, reproducibly from the seed', () => {
+    const victims = new Set<string>();
+    for (let seed = 1; seed <= 40; seed++) {
+      const runs = [0, 1].map(() => {
+        const sim = night2(BASIC, seed);
+        sim.act('p1', ['p7']).act('p2', ['p8']);
+        sim.until((g) => g.phase.kind === 'dawn');
+        return ['p7', 'p8'].filter((id) => !sim.game.alive[id]);
+      });
+      expect(runs[0]).toHaveLength(1);
+      expect(runs[1]).toEqual(runs[0]);
+      victims.add(runs[0]![0]!);
+    }
+    expect(victims).toEqual(new Set(['p7', 'p8']));
+  });
+
+  it('nobody picked: nobody dies', () => {
+    const sim = night2(BASIC);
+    sim.until((g) => g.phase.kind === 'dawn');
+    expect(sim.living()).toHaveLength(8);
   });
 });

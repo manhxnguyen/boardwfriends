@@ -171,6 +171,10 @@ export const RULES: Record<Lang, Record<GameKind, RuleSection[]>> = {
             'GS:3',
             'RR:3',
           ),
+          l(
+            'Tuỳ chọn của phòng “Sói chọn theo đa số” (tắt sẵn): người được nhiều Sói chọn nhất bị loại; nếu hoà, app bốc ngẫu nhiên một người trong số đó.',
+            'AD',
+          ),
           l('Sói được phép chọn một Sói khác.', 'RR:3'),
           l(
             'Trong app: thay vì nhắm mắt, mọi người cúi xuống điện thoại của mình. Ai cũng phải bấm trong mọi lượt, mỗi lượt dài cố định, để không ai đoán được vai của nhau.',
@@ -295,6 +299,10 @@ export const RULES: Record<Lang, Record<GameKind, RuleSection[]>> = {
             'From night two, the wolves must agree on one victim. If they take longer than 30 seconds, nobody is eliminated that night.',
             'GS:3',
             'RR:3',
+          ),
+          l(
+            'Room option “Wolves vote by majority” (off by default): the player picked by the most wolves is eliminated; on a tie the app draws one of them at random.',
+            'AD',
           ),
           l('Werewolves may choose another werewolf.', 'RR:3'),
           l(

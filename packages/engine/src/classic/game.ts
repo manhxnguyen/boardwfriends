@@ -114,6 +114,13 @@ export interface ClassicGame {
    * Off = official rule, night 1 is quiet [GS p.2]. See docs/rules/classic.md AD-AUTO-12.
    */
   firstNightKill: boolean;
+  /**
+   * Variant: the wolves' victim is the most picked player instead of a unanimous pick; a tie is
+   * broken at random. Off = official rule (UW-NIGHT-01/02). See AD-AUTO-14.
+   */
+  wolfMajority: boolean;
+  /** Fixed at deal time; breaks wolf-vote ties so the engine stays a pure function. */
+  seed: number;
   timings: ClassicTimings;
   night: number;
   day: number;
@@ -168,6 +175,8 @@ export function startClassic(input: {
   reveal: RevealMode;
   dayMinutes: number;
   firstNightKill?: boolean;
+  wolfMajority?: boolean;
+  seed?: number;
   timings?: Partial<ClassicTimings>;
 }): ClassicGame {
   const dayMs = input.dayMinutes * 60_000;
@@ -179,6 +188,8 @@ export function startClassic(input: {
     seen: [],
     reveal: input.reveal,
     firstNightKill: input.firstNightKill ?? false,
+    wolfMajority: input.wolfMajority ?? false,
+    seed: input.seed ?? 0,
     timings: { ...DEFAULT_TIMINGS, firstDayMs: dayMs, dayMs, ...input.timings },
     night: 0,
     day: 0,
@@ -408,6 +419,7 @@ function wolfConsensus(g: ClassicGame): string[] {
   const pack = alivePack(g);
   if (pack.length === 0) return [];
   const needed = wolfTargetCount(g);
+  if (g.wolfMajority) return wolfPlurality(g, pack, needed);
   const first = [...(g.acts.wolves[pack[0]!] ?? [])].sort();
   if (first.length !== needed) return [];
   const same = pack.every((id) => {
@@ -415,6 +427,34 @@ function wolfConsensus(g: ClassicGame): string[] {
     return picks.length === first.length && picks.every((p, i) => p === first[i]);
   });
   return same ? first : [];
+}
+
+/**
+ * AD-AUTO-14: the most picked players win; ties are broken by a hash of the game seed, the night
+ * and the player, so the result is random for the table but reproducible from the state.
+ */
+function wolfPlurality(g: ClassicGame, pack: string[], needed: number): string[] {
+  const votes = new Map<string, number>();
+  for (const wolf of pack) {
+    for (const target of new Set(g.acts.wolves[wolf] ?? [])) {
+      votes.set(target, (votes.get(target) ?? 0) + 1);
+    }
+  }
+  const tieBreak = (id: string) => hash(`${g.seed}|${g.night}|${id}`);
+  return [...votes.entries()]
+    .sort(([a, x], [b, y]) => y - x || tieBreak(a) - tieBreak(b))
+    .slice(0, needed)
+    .map(([id]) => id);
+}
+
+/** FNV-1a, 32 bit. */
+function hash(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h;
 }
 
 function wolfTargetCount(g: ClassicGame): number {
@@ -895,6 +935,7 @@ export function classicView(g: ClassicGame, viewer: string | null, now: number):
     }),
     phase: over ? phaseView(g) : hideNightCauses(phaseView(g)),
     cues: over ? g.cues : g.cues.map(hideCueCause),
+    wolfMajority: g.wolfMajority,
     you:
       viewer !== null && viewer in g.roles
         ? {

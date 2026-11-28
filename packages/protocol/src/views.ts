@@ -42,6 +42,8 @@ export interface SetupView {
   reveal: RevealMode;
   /** Classic variant: wolves already eliminate on night 1 (official rule: night 1 is quiet). */
   firstNightKill: boolean;
+  /** Classic auto variant: wolves' victim by most picks, ties at random (official: unanimous). */
+  wolfMajority: boolean;
   dayMinutes: number;
   /** Let the narrator display accept spoken commands (experimental). */
   voice: boolean;
@@ -215,6 +217,8 @@ export interface ClassicView {
   seats: SeatView[];
   phase: ClassicPhaseView;
   cues: CueEntry[];
+  /** Room option: the wolves' victim is the most picked player (AD-AUTO-14). */
+  wolfMajority: boolean;
   /** Null for the narrator display. */
   you: {
     role: ClassicRoleId;

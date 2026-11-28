@@ -17,6 +17,9 @@ export const playVi = {
   dayMinutes: 'Thời gian mỗi ngày',
   minutesShort: '{n} phút',
   firstNightKillLabel: 'Sói cắn từ đêm đầu',
+  wolfMajorityLabel: 'Sói chọn theo đa số',
+  wolfMajorityHint:
+    'Bật: người được nhiều Sói chọn nhất bị cắn, hoà thì app bốc ngẫu nhiên. Tắt: đúng luật gốc, cả bầy phải chọn trùng nhau.',
   firstNightKillHint:
     'Bật: đêm đầu Sói chọn nạn nhân, Bảo vệ và Phù thuỷ có tác dụng như mọi đêm. Tắt: đúng luật gốc, đêm đầu Sói chỉ nhận mặt nhau.',
   voiceLabel: 'MacBook nghe lệnh giọng nói (thử nghiệm)',
@@ -77,6 +80,8 @@ export const playVi = {
   wolvesHint: 'Cả bầy phải chọn trùng nhau, nếu không đêm nay không ai bị loại.',
   wolvesAgreed: 'Cả bầy đã chọn trùng nhau.',
   wolvesNotAgreed: 'Chưa trùng nhau: hết giờ mà chưa trùng thì đêm nay không ai bị loại.',
+  wolvesMajorityHint:
+    'Phòng này chọn theo đa số: người được nhiều Sói chọn nhất bị cắn, hoà thì app bốc ngẫu nhiên.',
   wolvesFollow: 'Chọn giống {name}',
   wolvesDouble:
     'Sói con đã chết: đêm nay cả bầy được loại 2 người. Chỉ Sói thấy dòng này. Cả bầy phải chọn trùng cả 2 người.',
@@ -223,6 +228,9 @@ export const playEn: Record<PlayKey, string> = {
   dayMinutes: 'Time per day',
   minutesShort: '{n} min',
   firstNightKillLabel: 'Wolves hunt from the first night',
+  wolfMajorityLabel: 'Wolves vote by majority',
+  wolfMajorityHint:
+    'On: the player picked by the most wolves dies; ties are drawn at random. Off: official rule, the whole pack must agree.',
   firstNightKillHint:
     'On: on night 1 the wolves choose a victim and the Bodyguard and Witch work as on any night. Off: official rule, night 1 the wolves only meet.',
   voiceLabel: 'MacBook listens for voice commands (experimental)',
@@ -280,6 +288,8 @@ export const playEn: Record<PlayKey, string> = {
   wolvesHint: 'The whole pack must agree, or nobody dies tonight.',
   wolvesAgreed: 'The whole pack agrees.',
   wolvesNotAgreed: 'Not agreed yet: if time runs out, nobody dies tonight.',
+  wolvesMajorityHint:
+    'This room votes by majority: the player picked by the most wolves dies; ties are drawn at random.',
   wolvesFollow: 'Pick like {name}',
   wolvesDouble:
     'The Wolf Cub is dead: tonight the pack eliminates 2 players. Only wolves see this. The whole pack must pick the same 2.',

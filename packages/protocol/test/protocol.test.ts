@@ -66,6 +66,7 @@ describe('game messages', () => {
         publicRoles: true,
         reveal: 'role',
         firstNightKill: true,
+        wolfMajority: false,
         dayMinutes: 5,
         voice: false,
       }),

@@ -247,7 +247,11 @@
                 : 'bg-moon/10 text-moon'}"
               role="status"
             >
-              {wolfHelp.agreed ? `✓ ${t('wolvesAgreed')}` : `⏳ ${t('wolvesNotAgreed')}`}
+              {wolfHelp.agreed
+                ? `✓ ${t('wolvesAgreed')}`
+                : view.wolfMajority
+                  ? `🗳️ ${t('wolvesMajorityHint')}`
+                  : `⏳ ${t('wolvesNotAgreed')}`}
             </p>
             {#if wolfHelp.follow.length}
               <div class="mb-3 flex flex-wrap gap-2">

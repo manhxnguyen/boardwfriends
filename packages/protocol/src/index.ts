@@ -6,7 +6,7 @@ export * from './roles.ts';
 export * from './views.ts';
 
 /** Bump whenever a message shape changes incompatibly. Clients on another version are rejected. */
-export const PROTOCOL_VERSION = 5;
+export const PROTOCOL_VERSION = 6;
 
 /** Room codes avoid look-alike characters (I/O/0/1) so they are easy to read aloud and type. */
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -77,6 +77,7 @@ export const SetupMessage = v.object({
   publicRoles: v.boolean(),
   reveal: v.picklist(['role', 'team', 'none']),
   firstNightKill: v.boolean(),
+  wolfMajority: v.boolean(),
   dayMinutes: v.pipe(
     v.number(),
     v.integer(),
