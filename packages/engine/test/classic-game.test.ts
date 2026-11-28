@@ -529,6 +529,10 @@ describe('Wolf Cub, Spellcaster, Insomniac, Sorceress', () => {
       .next();
     sim.untilCall('wolves', 2);
     expect(sim.prompt('p1')).toMatchObject({ purpose: 'wolves', count: 2, note: 'double' });
+    // Only the wolves know (AD-AUTO-13): the public call and everyone else's prompt say nothing.
+    const call = sim.game.cues.at(-1)!.cue;
+    expect(call).toMatchObject({ k: 'call-open', call: 'wolves', note: null });
+    expect(sim.prompt('p3')).toMatchObject({ purpose: 'suspect', note: null });
     sim.act('p1', ['p4', 'p5']).until((g) => g.phase.kind === 'dawn');
     expect(sim.living()).not.toContain('p4');
     expect(sim.living()).not.toContain('p5');

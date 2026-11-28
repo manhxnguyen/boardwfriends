@@ -244,14 +244,9 @@ export function cueText(cue: Cue, lang: Lang, names: Names, oneNight: boolean): 
       return t.gameStart;
     case 'night':
       return cue.n === 1 ? t.nightFirst : t.night(cue.n);
-    case 'call-open': {
-      let text = callLines(lang, cue.call, oneNight)?.open ?? null;
-      if (text && cue.note === 'double') {
-        text +=
-          lang === 'vi' ? ' Đêm nay được chọn hai nạn nhân.' : ' Tonight, choose two victims.';
-      }
-      return text;
-    }
+    case 'call-open':
+      // Never says how many victims: only the wolves' phones know about the Wolf Cub double kill.
+      return callLines(lang, cue.call, oneNight)?.open ?? null;
     case 'call-close':
       return callLines(lang, cue.call, oneNight)?.close ?? null;
     case 'dawn': {

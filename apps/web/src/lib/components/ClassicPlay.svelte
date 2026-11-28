@@ -75,7 +75,7 @@
     'meet-only': 'meetOnly',
     'no-effect': 'noEffect',
     used: 'usedPower',
-    double: 'wolvesHint',
+    double: 'wolvesDouble',
   };
 
   let witchKilling = $state(false);

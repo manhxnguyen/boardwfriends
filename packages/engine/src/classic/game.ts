@@ -383,14 +383,15 @@ function openStep(g: ClassicGame, step: number, at: number) {
   }
 }
 
+/**
+ * Public note on a night call (spoken aloud and shown on every phone): only what everyone knows.
+ * Secrets go in the private prompt instead: the Wolf Cub double kill only to the wolves
+ * (AD-AUTO-13), "potions used" only to the Witch.
+ */
 function stepNote(g: ClassicGame, call: NightCall): string | null {
-  if (quietNight(g)) {
-    if (call === 'wolves') return 'meet-only'; // [GS p.2]
-    if (call === 'bodyguard' || call === 'witch') return 'no-effect'; // UW-N1-05
-    return null;
-  }
-  if (call === 'wolves' && g.memory.cubDouble) return 'double'; // [RR p.4]
-  if (call === 'witch' && g.memory.witchUsed) return 'used';
+  if (!quietNight(g)) return null;
+  if (call === 'wolves') return 'meet-only'; // [GS p.2]
+  if (call === 'bodyguard' || call === 'witch') return 'no-effect'; // UW-N1-05
   return null;
 }
 
